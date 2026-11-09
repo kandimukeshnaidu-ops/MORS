@@ -5,6 +5,7 @@ import { getDishBySlug } from '../actions';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Chip } from '@/components/ui/Chip';
 import { Avatar } from '@/components/ui/Avatar';
+import { SaveToCollectionButton } from '@/components/collections/SaveToCollectionButton';
 import type { Metadata } from 'next';
 
 interface DishPageProps {
@@ -53,11 +54,19 @@ export default async function DishDetailPage({ params }: DishPageProps) {
 
         {/* Dish Hero Header */}
         <header className="space-y-4 border-b border-[var(--border-subtle)] pb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip size="sm" label="CANONICAL DISH" selected />
-            {dish.cuisine && (
-              <Chip size="sm" label={dish.cuisine} />
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip size="sm" label="CANONICAL DISH" selected />
+              {dish.cuisine && (
+                <Chip size="sm" label={dish.cuisine} />
+              )}
+            </div>
+
+            <SaveToCollectionButton
+              itemType="dish"
+              targetId={dish.id}
+              itemTitle={dish.name}
+            />
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-[var(--text-primary)]">

@@ -505,6 +505,108 @@ export type Database = {
         };
         Relationships: [];
       };
+      collections: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string | null;
+          cover_photo_path: string | null;
+          visibility: CollectionVisibility;
+          share_token: string;
+          is_wishlist: boolean;
+          items_count: number;
+          likes_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          description?: string | null;
+          cover_photo_path?: string | null;
+          visibility?: CollectionVisibility;
+          share_token?: string;
+          is_wishlist?: boolean;
+          items_count?: number;
+          likes_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          description?: string | null;
+          cover_photo_path?: string | null;
+          visibility?: CollectionVisibility;
+          share_token?: string;
+          is_wishlist?: boolean;
+          items_count?: number;
+          likes_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      collection_items: {
+        Row: {
+          id: string;
+          collection_id: string;
+          item_type: 'experience' | 'dish' | 'place';
+          experience_id: string | null;
+          dish_id: string | null;
+          place_id: string | null;
+          note: string | null;
+          position: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          collection_id: string;
+          item_type: 'experience' | 'dish' | 'place';
+          experience_id?: string | null;
+          dish_id?: string | null;
+          place_id?: string | null;
+          note?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          collection_id?: string;
+          item_type?: 'experience' | 'dish' | 'place';
+          experience_id?: string | null;
+          dish_id?: string | null;
+          place_id?: string | null;
+          note?: string | null;
+          position?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      collection_likes: {
+        Row: {
+          id: string;
+          collection_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          collection_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          collection_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -642,6 +744,18 @@ export type Database = {
       };
       mark_notifications_read: {
         Args: { p_ids?: string[] | null };
+        Returns: boolean;
+      };
+      get_or_create_wishlist: {
+        Args: { user_uuid: string };
+        Returns: string;
+      };
+      toggle_collection_like: {
+        Args: { coll_id: string };
+        Returns: { liked: boolean; likesCount: number };
+      };
+      can_view_collection: {
+        Args: { viewer_id: string | null; target_collection_id: string; req_token?: string | null };
         Returns: boolean;
       };
     };

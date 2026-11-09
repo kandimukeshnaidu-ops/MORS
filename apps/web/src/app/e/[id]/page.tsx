@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { ExperienceActions } from '@/components/log/ExperienceActions';
 import { LikeButton } from '@/components/engagement/LikeButton';
 import { CommentsSection } from '@/components/engagement/CommentsSection';
+import { SaveToCollectionButton } from '@/components/collections/SaveToCollectionButton';
 import { getLikeStatus } from '@/app/engagement/actions';
 import type { Metadata } from 'next';
 
@@ -190,6 +191,12 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
             </div>
 
             <div className="ml-auto flex items-center gap-3">
+              <SaveToCollectionButton
+                itemType="experience"
+                targetId={id}
+                itemTitle={exp.title || 'Food Experience'}
+              />
+
               <LikeButton
                 experienceId={id}
                 initialLiked={likeStatus.liked}

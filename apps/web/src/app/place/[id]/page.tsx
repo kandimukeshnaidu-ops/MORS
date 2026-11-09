@@ -5,6 +5,7 @@ import { getPlaceById } from '@/app/dish/actions';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Chip } from '@/components/ui/Chip';
 import { Avatar } from '@/components/ui/Avatar';
+import { SaveToCollectionButton } from '@/components/collections/SaveToCollectionButton';
 import type { Metadata } from 'next';
 
 interface PlacePageProps {
@@ -53,9 +54,17 @@ export default async function PlaceDetailPage({ params }: PlacePageProps) {
 
         {/* Place Header */}
         <header className="space-y-4 border-b border-[var(--border-subtle)] pb-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip size="sm" label="DINING VENUE" selected />
-            {place.city && <Chip size="sm" label={place.city} />}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Chip size="sm" label="DINING VENUE" selected />
+              {place.city && <Chip size="sm" label={place.city} />}
+            </div>
+
+            <SaveToCollectionButton
+              itemType="place"
+              targetId={place.id}
+              itemTitle={place.name}
+            />
           </div>
 
           <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-[var(--text-primary)]">
