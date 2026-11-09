@@ -454,6 +454,22 @@ export type Database = {
           rating: number | null;
         }>;
       };
+      merge_dishes: {
+        Args: { p_source_id: string; p_target_id: string };
+        Returns: boolean;
+      };
+      merge_places: {
+        Args: { p_source_id: string; p_target_id: string };
+        Returns: boolean;
+      };
+      find_similar_dishes: {
+        Args: { p_name: string; p_threshold?: number };
+        Returns: Array<{ dish_id: string; name: string; slug: string; similarity: number }>;
+      };
+      find_similar_places: {
+        Args: { p_name: string; p_city?: string | null; p_threshold?: number };
+        Returns: Array<{ place_id: string; name: string; city: string | null; similarity: number }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;
