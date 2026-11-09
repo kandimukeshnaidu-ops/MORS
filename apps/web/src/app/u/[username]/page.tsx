@@ -1,9 +1,11 @@
 import 'react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/shell/AppShell';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { FollowButton } from '@/components/social/FollowButton';
 import { Chip } from '@/components/ui/Chip';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -36,26 +38,29 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
 
   const isOwner = currentUser?.id === profile.id;
 
-  // 3. Check if private profile and if viewer can view
-  let canView = true;
+  // 3. Follow state & Authorization check
   let isFollowing = false;
+  let isPending = false;
+  let canView = true;
+
+  if (!isOwner && currentUser) {
+    const { data: follow } = await supabase
+      .from('follows')
+      .select('status')
+      .eq('follower_id', currentUser.id)
+      .eq('following_id', profile.id)
+      .maybeSingle();
+
+    if (follow?.status === 'accepted') {
+      isFollowing = true;
+    } else if (follow?.status === 'pending') {
+      isPending = true;
+    }
+  }
 
   if (profile.is_private && !isOwner) {
-    if (!currentUser) {
+    if (!currentUser || !isFollowing) {
       canView = false;
-    } else {
-      const { data: follow } = await supabase
-        .from('follows')
-        .select('status')
-        .eq('follower_id', currentUser.id)
-        .eq('following_id', profile.id)
-        .single();
-
-      if (follow?.status === 'accepted') {
-        isFollowing = true;
-      } else {
-        canView = false;
-      }
     }
   }
 
@@ -124,13 +129,18 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
             {/* Actions: Follow / Edit */}
             <div>
               {isOwner ? (
-                <Button variant="secondary" size="sm">
-                  Edit Profile
-                </Button>
+                <Link href="/settings">
+                  <Button variant="secondary" size="sm">
+                    Edit Profile
+                  </Button>
+                </Link>
               ) : (
-                <Button variant={isFollowing ? 'secondary' : 'primary'} size="sm">
-                  {isFollowing ? 'Following' : 'Follow'}
-                </Button>
+                <FollowButton
+                  targetUserId={profile.id}
+                  initialFollowing={isFollowing}
+                  initialPending={isPending}
+                  size="sm"
+                />
               )}
             </div>
           </div>

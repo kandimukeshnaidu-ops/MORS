@@ -470,6 +470,57 @@ export type Database = {
         Args: { p_name: string; p_city?: string | null; p_threshold?: number };
         Returns: Array<{ place_id: string; name: string; city: string | null; similarity: number }>;
       };
+      get_home_feed: {
+        Args: {
+          p_cursor_published_at?: string | null;
+          p_cursor_id?: string | null;
+          p_limit?: number;
+        };
+        Returns: Array<{
+          id: string;
+          user_id: string;
+          title: string | null;
+          category_slug: string;
+          eaten_at: string;
+          published_at: string;
+          visibility: Visibility;
+          overall_rating: number | null;
+          description: string | null;
+          place_id: string | null;
+        }>;
+      };
+      follow_user: {
+        Args: { p_target_id: string };
+        Returns: string;
+      };
+      unfollow_user: {
+        Args: { p_target_id: string };
+        Returns: boolean;
+      };
+      respond_follow_request: {
+        Args: { p_follower_id: string; p_accept: boolean };
+        Returns: boolean;
+      };
+      block_user: {
+        Args: { p_target_id: string };
+        Returns: boolean;
+      };
+      unblock_user: {
+        Args: { p_target_id: string };
+        Returns: boolean;
+      };
+      get_suggested_profiles: {
+        Args: { p_limit?: number };
+        Returns: Array<{
+          id: string;
+          username: string;
+          display_name: string | null;
+          avatar_path: string | null;
+          bio: string | null;
+          experiences_count: number;
+          followers_count: number;
+        }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;

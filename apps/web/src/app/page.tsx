@@ -1,56 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/shell/AppShell';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
 import { LogModal } from '@/components/log/LogModal';
+import { PeopleToFollow } from '@/components/social/PeopleToFollow';
 import { FOOD_CATEGORIES } from '@mors/domain';
+import {
+  getHomeFeed,
+  getSuggestedUsers,
+  type FeedItem,
+  type SuggestedProfile,
+} from '@/app/social/actions';
 
 export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
 
-  // Sample feed data for Phase 2 visual verification
-  const feedExperiences = [
-    {
-      id: 'fe-01',
-      author: {
-        username: 'hyderabad_foodie',
-        displayName: 'Sameer Khan',
-      },
-      title: 'Authentic Mutton Dum Biryani',
-      category: 'Restaurant',
-      placeName: 'Bawarchi Restaurant, RTC X Roads',
-      overallRating: 9,
-      date: 'Today, 2:30 PM',
-      description:
-        'Slow dum cooked over coal. Fragrant basmati grains, tender marinated mutton with saffron-infused milk.',
-      dishes: [
-        { name: 'Mutton Dum Biryani', rating: 10 },
-        { name: 'Mirchi Ka Salan', rating: 8 },
-      ],
-    },
-    {
-      id: 'fe-02',
-      author: {
-        username: 'ananya_cooks',
-        displayName: 'Ananya Rao',
-      },
-      title: 'Sunday Morning Ghee Podi Dosa',
-      category: 'Home Cooked',
-      overallRating: 8,
-      date: 'Yesterday, 9:15 AM',
-      description:
-        'Crispy homemade fermented batter cooked in fresh artisanal cow ghee, sprinkled with homemade gun powder.',
-      dishes: [
-        { name: 'Ghee Karam Dosa', rating: 9 },
-        { name: 'Coconut Chutney', rating: 8 },
-      ],
-    },
-  ];
+  // Live Feed & Suggestions State
+  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [nextCursor, setNextCursor] = useState<{ publishedAt: string; id: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [suggestedProfiles, setSuggestedProfiles] = useState<SuggestedProfile[]>([]);
+
+  const loadFeed = useCallback(async () => {
+    setLoading(true);
+    const res = await getHomeFeed(null, 15);
+    setFeedItems(res.items);
+    setNextCursor(res.nextCursor);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadFeed();
+    getSuggestedUsers(4).then(setSuggestedProfiles);
+  }, [loadFeed]);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+
+    const res = await getHomeFeed(nextCursor, 15);
+    setFeedItems((prev) => [...prev, ...res.items]);
+    setNextCursor(res.nextCursor);
+    setLoadingMore(false);
+  };
+
+  // Filter items by selectedCategory if active
+  const filteredFeed = selectedCategory
+    ? feedItems.filter((item) => item.categorySlug === selectedCategory)
+    : feedItems;
 
   return (
     <AppShell onOpenLog={() => setIsLogModalOpen(true)}>
@@ -98,15 +101,90 @@ export default function HomePage() {
 
         {/* Feed Stream */}
         <div className="space-y-6 max-w-xl">
-          {feedExperiences.map((exp) => (
-            <ExperienceCard key={exp.id} {...exp} />
-          ))}
+          {loading ? (
+            <div className="space-y-4">
+              <div className="h-48 rounded-2xl bg-[var(--bg-surface)] animate-pulse" />
+              <div className="h-48 rounded-2xl bg-[var(--bg-surface)] animate-pulse" />
+            </div>
+          ) : filteredFeed.length > 0 ? (
+            filteredFeed.map((exp) => (
+              <div key={exp.id} className="relative">
+                <ExperienceCard
+                  id={exp.id}
+                  author={{
+                    username: exp.author.username,
+                    displayName: exp.author.displayName || exp.author.username,
+                    avatarUrl: exp.author.avatarUrl || undefined,
+                  }}
+                  title={exp.title || exp.dishes[0]?.name || 'Food Experience'}
+                  category={exp.categorySlug}
+                  placeName={exp.placeName || undefined}
+                  overallRating={exp.overallRating || undefined}
+                  date={new Date(exp.publishedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  })}
+                  description={exp.description || undefined}
+                  photos={
+                    exp.primaryPhotoUrl
+                      ? [{ url: exp.primaryPhotoUrl, altText: exp.title || undefined }]
+                      : []
+                  }
+                  dishes={exp.dishes.map((d) => ({
+                    name: d.name,
+                    rating: d.rating || undefined,
+                  }))}
+                />
+              </div>
+            ))
+          ) : (
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-8 text-center space-y-3">
+                <h3 className="font-display text-base font-semibold text-[var(--text-primary)]">
+                  Your feed is waiting for delicious stories
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
+                  Follow food lovers and home cooks to see their chronological meal updates here, or log your own experiences!
+                </p>
+                <div className="pt-2">
+                  <Button variant="primary" size="sm" onClick={() => setIsLogModalOpen(true)}>
+                    Log Your First Meal
+                  </Button>
+                </div>
+              </div>
+
+              {/* Cold-Start Recommendations */}
+              {suggestedProfiles.length > 0 && (
+                <PeopleToFollow profiles={suggestedProfiles} />
+              )}
+            </div>
+          )}
+
+          {/* Load More Button for Keyset Pagination */}
+          {nextCursor && !loading && (
+            <div className="pt-4 text-center">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleLoadMore}
+                isLoading={loadingMore}
+                className="w-full sm:w-auto px-6"
+              >
+                Load earlier stories
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Full Interactive Food Log Modal (Quick Log + Progressive Details) */}
+        {/* Full Interactive Food Log Modal */}
         <LogModal
           isOpen={isLogModalOpen}
-          onClose={() => setIsLogModalOpen(false)}
+          onClose={() => {
+            setIsLogModalOpen(false);
+            loadFeed();
+          }}
         />
       </div>
     </AppShell>
