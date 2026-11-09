@@ -26,7 +26,7 @@ function auditMigrations(migrationsDir: string) {
       if (tableName === 'schema_migrations') continue;
 
       const rlsRegex = new RegExp(`ALTER\\s+TABLE\\s+(?:public\\.)?${tableName}\\s+ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY`, 'i');
-      const policyRegex = new RegExp(`CREATE\\s+POLICY\\s+[a-zA-Z0-9_"]+\\s+ON\\s+(?:public\\.)?${tableName}`, 'i');
+      const policyRegex = new RegExp(`CREATE\\s+POLICY\\s+(?:"[^"]+"|\\S+)\\s+ON\\s+(?:public\\.)?${tableName}`, 'i');
 
       const hasRls = rlsRegex.test(content);
       const hasPolicy = policyRegex.test(content);
