@@ -6,9 +6,7 @@ import { AppShell } from '@/components/shell/AppShell';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { Chip } from '@/components/ui/Chip';
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
-import { RatingStars } from '@/components/ui/RatingStars';
+import { LogModal } from '@/components/log/LogModal';
 import { FOOD_CATEGORIES } from '@mors/domain';
 
 export default function HomePage() {
@@ -105,35 +103,11 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Quick Log Modal */}
-        <Modal
+        {/* Full Interactive Food Log Modal (Quick Log + Progressive Details) */}
+        <LogModal
           isOpen={isLogModalOpen}
           onClose={() => setIsLogModalOpen(false)}
-          title="Quick Food Log"
-        >
-          <div className="space-y-4">
-            <p className="text-xs text-[var(--text-secondary)]">
-              3-step quick log: dish name, optional photo, and optional rating.
-            </p>
-            <Input
-              label="Dish Name (Required)"
-              placeholder="e.g. Hyderabadi Dum Biryani"
-              autoFocus
-            />
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-xs text-[var(--text-secondary)]">Rating:</span>
-              <RatingStars value={9} size="md" />
-            </div>
-            <div className="flex justify-end gap-2 pt-4 border-t border-[var(--border-subtle)]">
-              <Button variant="ghost" onClick={() => setIsLogModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={() => setIsLogModalOpen(false)}>
-                Publish
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        />
       </div>
     </AppShell>
   );

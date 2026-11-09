@@ -81,3 +81,11 @@ export const CollectionInputSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   visibility: z.enum(COLLECTION_VISIBILITIES).default('private'),
 });
+
+export type UsernameInput = z.infer<typeof UsernameSchema>;
+export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>;
+export type ExperienceDishInput = z.infer<typeof ExperienceDishInputSchema>;
+export type ExperiencePhotoInput = z.infer<typeof ExperiencePhotoInputSchema>;
+export type CreateExperienceInput = z.infer<typeof CreateExperienceInputSchema>;
+export type CollectionInput = z.infer<typeof CollectionInputSchema>;
+
