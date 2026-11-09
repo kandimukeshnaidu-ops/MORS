@@ -439,6 +439,21 @@ export type Database = {
         Args: { viewer: string; target: string };
         Returns: boolean;
       };
+      get_calendar_month_summary: {
+        Args: { p_user_id: string; p_year: number; p_month: number };
+        Returns: Array<{ day: number; count: number; thumbnail_path: string | null }>;
+      };
+      get_on_this_day_memory: {
+        Args: { p_user_id: string };
+        Returns: Array<{
+          experience_id: string;
+          title: string | null;
+          dish_name: string;
+          years_ago: number;
+          thumbnail_path: string | null;
+          rating: number | null;
+        }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;
