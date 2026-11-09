@@ -33,6 +33,15 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
       ),
     },
     {
+      label: 'Search',
+      href: '/search',
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+      ),
+    },
+    {
       label: 'Explore',
       href: '/explore',
       onClick: (e: React.MouseEvent) => {
@@ -103,12 +112,21 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-[var(--text-primary)]">
           MORS
         </Link>
-        <Link
-          href="/dev/ui"
-          className="text-xs font-mono text-[var(--accent-primary)] border border-[var(--border-subtle)] px-2 py-1 rounded"
-        >
-          /dev/ui
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/search"
+            aria-label="Search"
+            className="p-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          >
+            🔍
+          </Link>
+          <Link
+            href="/dev/ui"
+            className="text-xs font-mono text-[var(--accent-primary)] border border-[var(--border-subtle)] px-2 py-1 rounded"
+          >
+            /dev/ui
+          </Link>
+        </div>
       </header>
 
       {/* Desktop Shell (3-Column Layout) */}

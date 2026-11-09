@@ -758,6 +758,23 @@ export type Database = {
         Args: { viewer_id: string | null; target_collection_id: string; req_token?: string | null };
         Returns: boolean;
       };
+      search_all: {
+        Args: {
+          p_query: string;
+          p_types?: string[] | null;
+          p_city?: string | null;
+          p_limit?: number;
+        };
+        Returns: Array<{
+          result_type: 'dish' | 'place' | 'user' | 'experience' | 'collection';
+          id: string;
+          title: string;
+          subtitle: string | null;
+          photo_url: string | null;
+          url: string;
+          score: number;
+        }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;
