@@ -7,6 +7,9 @@ import { RatingStars } from '@/components/ui/RatingStars';
 import { Chip } from '@/components/ui/Chip';
 import { Avatar } from '@/components/ui/Avatar';
 import { ExperienceActions } from '@/components/log/ExperienceActions';
+import { LikeButton } from '@/components/engagement/LikeButton';
+import { CommentsSection } from '@/components/engagement/CommentsSection';
+import { getLikeStatus } from '@/app/engagement/actions';
 import type { Metadata } from 'next';
 
 interface ExperienceDetailPageProps {
@@ -50,6 +53,7 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
   }
 
   const isOwner = user?.id === exp.user_id;
+  const likeStatus = await getLikeStatus(id);
 
   // Fetch author profile
   const { data: profile } = await supabase
@@ -185,12 +189,21 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
               <div className="text-xs text-[var(--text-muted)]">@{profile.username}</div>
             </div>
 
-            {exp.overall_rating && (
-              <div className="ml-auto flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5">
-                <span className="text-xs text-[var(--text-muted)]">Overall</span>
-                <RatingStars value={exp.overall_rating} size="sm" />
-              </div>
-            )}
+            <div className="ml-auto flex items-center gap-3">
+              <LikeButton
+                experienceId={id}
+                initialLiked={likeStatus.liked}
+                initialCount={likeStatus.count}
+                size="md"
+              />
+
+              {exp.overall_rating && (
+                <div className="flex items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5">
+                  <span className="text-xs text-[var(--text-muted)]">Overall</span>
+                  <RatingStars value={exp.overall_rating} size="sm" />
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -310,6 +323,11 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
             ))}
           </div>
         )}
+
+        {/* Engagement: Comments Section */}
+        <div className="pt-6">
+          <CommentsSection experienceId={id} />
+        </div>
       </div>
     </div>
   );

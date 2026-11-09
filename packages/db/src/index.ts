@@ -394,6 +394,117 @@ export type Database = {
         };
         Relationships: [];
       };
+      experience_likes: {
+        Row: {
+          experience_id: string;
+          user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          experience_id: string;
+          user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          experience_id?: string;
+          user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      experience_comments: {
+        Row: {
+          id: string;
+          experience_id: string;
+          user_id: string;
+          body: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          experience_id: string;
+          user_id: string;
+          body: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          experience_id?: string;
+          user_id?: string;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          recipient_id: string;
+          actor_id: string;
+          type: NotificationType;
+          experience_id: string | null;
+          comment_id: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_id: string;
+          actor_id: string;
+          type: NotificationType;
+          experience_id?: string | null;
+          comment_id?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient_id?: string;
+          actor_id?: string;
+          type?: NotificationType;
+          experience_id?: string | null;
+          comment_id?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          target_type: ReportTarget;
+          target_id: string;
+          reason: string;
+          details: string | null;
+          status: 'pending' | 'reviewed' | 'actioned';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          target_type: ReportTarget;
+          target_id: string;
+          reason: string;
+          details?: string | null;
+          status?: 'pending' | 'reviewed' | 'actioned';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          target_type?: ReportTarget;
+          target_id?: string;
+          reason?: string;
+          details?: string | null;
+          status?: 'pending' | 'reviewed' | 'actioned';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -520,6 +631,18 @@ export type Database = {
           experiences_count: number;
           followers_count: number;
         }>;
+      };
+      toggle_experience_like: {
+        Args: { p_experience_id: string };
+        Returns: Array<{ liked: boolean; total_likes: number }>;
+      };
+      add_experience_comment: {
+        Args: { p_experience_id: string; p_body: string };
+        Returns: Array<{ comment_id: string; created_at: string }>;
+      };
+      mark_notifications_read: {
+        Args: { p_ids?: string[] | null };
+        Returns: boolean;
       };
     };
     Enums: {
