@@ -8,6 +8,7 @@ node_modules/
 out/
 build/
 dist/
+.turbo/
 
 # Environment files
 .env
@@ -27,6 +28,7 @@ pnpm-debug.log*
 # Testing coverage & reports
 coverage/
 reports/janitor-*
+vibe-janitor-report/
 
 # OS files
 .DS_Store

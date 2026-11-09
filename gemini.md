@@ -8,8 +8,8 @@ JANITOR_SCHEDULE: after every feature, before every commit, end of session
 BRAND_COLORS: [primary #____, secondary #____, neutral scale #____] # Pending user definition before UI components
 BRAND_FONTS: [heading ____, body ____] # Pending user definition before UI components
 SPACING_SCALE: 4, 8, 16, 24, 32, 48, 64
-TEST_COMMAND: npm test
-AUDIT_COMMAND: npm audit
+TEST_COMMAND: pnpm test
+AUDIT_COMMAND: pnpm audit
 
 ## 1. PRIORITY AND CONFLICT RULES
 1. Order of priority: Security > Correctness > Simplicity > Maintainability > Speed.
