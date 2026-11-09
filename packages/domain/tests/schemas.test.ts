@@ -13,6 +13,8 @@ describe('Domain Schemas', () => {
     expect(UsernameSchema.safeParse('user with spaces').success).toBe(false);
     expect(UsernameSchema.safeParse('USER_CAPS').success).toBe(false); // no uppercase
     expect(UsernameSchema.safeParse('user@email').success).toBe(false);
+    expect(UsernameSchema.safeParse('admin').success).toBe(false); // reserved
+    expect(UsernameSchema.safeParse('settings').success).toBe(false); // reserved
   });
 
   it('validates food experience payload', () => {

@@ -25,7 +25,7 @@ export type ReportTarget =
   | 'dish'
   | 'place';
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
@@ -52,11 +52,53 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Partial<Database['public']['Tables']['profiles']['Row']> & {
+        Insert: {
           id: string;
           username: string;
+          display_name?: string | null;
+          bio?: string | null;
+          location_text?: string | null;
+          avatar_path?: string | null;
+          cover_path?: string | null;
+          favourite_cuisines?: string[];
+          social_links?: Json;
+          is_private?: boolean;
+          default_visibility?: Visibility;
+          discoverable?: boolean;
+          notification_prefs?: Json;
+          followers_count?: number;
+          following_count?: number;
+          experiences_count?: number;
+          role?: 'user' | 'moderator' | 'admin';
+          onboarding_completed_at?: string | null;
+          deletion_requested_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['profiles']['Row']>;
+        Update: {
+          id?: string;
+          username?: string;
+          display_name?: string | null;
+          bio?: string | null;
+          location_text?: string | null;
+          avatar_path?: string | null;
+          cover_path?: string | null;
+          favourite_cuisines?: string[];
+          social_links?: Json;
+          is_private?: boolean;
+          default_visibility?: Visibility;
+          discoverable?: boolean;
+          notification_prefs?: Json;
+          followers_count?: number;
+          following_count?: number;
+          experiences_count?: number;
+          role?: 'user' | 'moderator' | 'admin';
+          onboarding_completed_at?: string | null;
+          deletion_requested_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       follows: {
         Row: {
@@ -71,7 +113,13 @@ export interface Database {
           status?: FollowStatus;
           created_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['follows']['Row']>;
+        Update: {
+          follower_id?: string;
+          following_id?: string;
+          status?: FollowStatus;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       blocks: {
         Row: {
@@ -84,7 +132,12 @@ export interface Database {
           blocked_id: string;
           created_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['blocks']['Row']>;
+        Update: {
+          blocker_id?: string;
+          blocked_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       food_categories: {
         Row: {
@@ -99,7 +152,13 @@ export interface Database {
           sort_order?: number;
           is_active?: boolean;
         };
-        Update: Partial<Database['public']['Tables']['food_categories']['Row']>;
+        Update: {
+          slug?: string;
+          label?: string;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Relationships: [];
       };
       places: {
         Row: {
@@ -136,7 +195,24 @@ export interface Database {
           merged_into_id?: string | null;
           created_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['places']['Row']>;
+        Update: {
+          id?: string;
+          name?: string;
+          normalized_name?: string;
+          place_type?: string | null;
+          parent_place_id?: string | null;
+          address?: string | null;
+          city?: string | null;
+          country?: string;
+          lat?: number | null;
+          lng?: number | null;
+          external_source?: string | null;
+          external_id?: string | null;
+          created_by?: string | null;
+          merged_into_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       dishes: {
         Row: {
@@ -161,7 +237,18 @@ export interface Database {
           merged_into_id?: string | null;
           created_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['dishes']['Row']>;
+        Update: {
+          id?: string;
+          name?: string;
+          normalized_name?: string;
+          slug?: string;
+          cuisine?: string | null;
+          description?: string | null;
+          created_by?: string | null;
+          merged_into_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       dish_aliases: {
         Row: {
@@ -176,7 +263,13 @@ export interface Database {
           alias: string;
           normalized_alias: string;
         };
-        Update: Partial<Database['public']['Tables']['dish_aliases']['Row']>;
+        Update: {
+          id?: string;
+          dish_id?: string;
+          alias?: string;
+          normalized_alias?: string;
+        };
+        Relationships: [];
       };
       food_experiences: {
         Row: {
@@ -217,7 +310,26 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
-        Update: Partial<Database['public']['Tables']['food_experiences']['Row']>;
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string | null;
+          category_slug?: string;
+          eaten_at?: string;
+          published_at?: string | null;
+          status?: ExperienceStatus;
+          visibility?: Visibility;
+          overall_rating?: number | null;
+          description?: string | null;
+          place_id?: string | null;
+          price_amount?: number | null;
+          price_currency?: string;
+          cuisine?: string | null;
+          tags?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       experience_dishes: {
         Row: {
@@ -238,7 +350,16 @@ export interface Database {
           rating?: number | null;
           note?: string | null;
         };
-        Update: Partial<Database['public']['Tables']['experience_dishes']['Row']>;
+        Update: {
+          id?: string;
+          experience_id?: string;
+          dish_id?: string | null;
+          display_name?: string;
+          position?: number;
+          rating?: number | null;
+          note?: string | null;
+        };
+        Relationships: [];
       };
       experience_photos: {
         Row: {
@@ -261,7 +382,17 @@ export interface Database {
           alt_text?: string | null;
           position?: number;
         };
-        Update: Partial<Database['public']['Tables']['experience_photos']['Row']>;
+        Update: {
+          id?: string;
+          experience_id?: string;
+          storage_path?: string;
+          width?: number;
+          height?: number;
+          blurhash?: string | null;
+          alt_text?: string | null;
+          position?: number;
+        };
+        Relationships: [];
       };
     };
     Views: {
@@ -272,6 +403,7 @@ export interface Database {
           public_rating_count: number;
           public_rating_avg: number | null;
         };
+        Relationships: [];
       };
       place_public_stats: {
         Row: {
@@ -279,6 +411,7 @@ export interface Database {
           public_experience_count: number;
           public_rating_avg: number | null;
         };
+        Relationships: [];
       };
     };
     Functions: {
@@ -315,5 +448,6 @@ export interface Database {
       notification_t: NotificationType;
       report_target_t: ReportTarget;
     };
+    CompositeTypes: Record<string, never>;
   };
-}
+};

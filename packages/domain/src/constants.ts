@@ -35,3 +35,33 @@ export const PHOTO_LIMITS = {
   MAX_DIMENSION: 2048,
   MAX_BYTES: 10 * 1024 * 1024, // 10MB client raw limit
 } as const;
+
+export const RESERVED_USERNAMES = [
+  'admin',
+  'administrator',
+  'root',
+  'api',
+  'auth',
+  'mors',
+  'app',
+  'settings',
+  'explore',
+  'dev',
+  'terms',
+  'privacy',
+  'login',
+  'register',
+  'signup',
+  'logout',
+  'help',
+  'support',
+  'profile',
+  'collections',
+  'dishes',
+  'places',
+  'feed',
+  'status',
+  'about',
+  'legal',
+] as const;
+

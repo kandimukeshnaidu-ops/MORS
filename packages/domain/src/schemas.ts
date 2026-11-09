@@ -4,6 +4,7 @@ import {
   COLLECTION_VISIBILITIES,
   EXPERIENCE_STATUSES,
   RATING_LIMITS,
+  RESERVED_USERNAMES,
 } from './constants';
 
 export const UsernameSchema = z
@@ -13,6 +14,10 @@ export const UsernameSchema = z
   .regex(
     /^[a-z0-9_.]+$/,
     'Username may only contain lowercase letters, numbers, underscores, and dots'
+  )
+  .refine(
+    (val) => !RESERVED_USERNAMES.includes(val.toLowerCase() as (typeof RESERVED_USERNAMES)[number]),
+    'This username is reserved by the system'
   );
 
 export const ProfileUpdateSchema = z.object({
