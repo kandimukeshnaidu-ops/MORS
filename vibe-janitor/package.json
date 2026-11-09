@@ -1,0 +1,97 @@
+{
+  "name": "vibe-janitor",
+  "version": "0.1.9",
+  "description": "A CLI tool that cleans AI-generated JavaScript/TypeScript projects efficiently and intelligently",
+  "main": "dist/cli/index.js",
+  "type": "module",
+  "bin": {
+    "vibe-janitor": "dist/cli/index.js"
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"**/*.ts\"",
+    "start": "node dist/cli/index.js",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "version": "npm run format && git add -A cli core utils types",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TravnikovDev/vibe-janitor.git"
+  },
+  "keywords": [
+    "typescript",
+    "javascript",
+    "cli",
+    "code-cleanup",
+    "code-optimizer",
+    "code-maintenance",
+    "dead-code",
+    "unused-imports",
+    "unused-code",
+    "static-analysis",
+    "dependency-analysis",
+    "dependency-check",
+    "refactoring",
+    "code-quality",
+    "ai-generated-code",
+    "ai-tools",
+    "llm",
+    "llm-tools",
+    "copilot",
+    "chatgpt",
+    "cursor",
+    "windsurf",
+    "project-cleanup"
+  ],
+  "author": "TravnikovDev",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TravnikovDev/vibe-janitor/issues"
+  },
+  "homepage": "https://github.com/TravnikovDev/vibe-janitor#readme",
+  "dependencies": {
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
+    "css-tree": "^2.3.1",
+    "depcheck": "^1.4.7",
+    "fast-glob": "^3.3.3",
+    "fs-extra": "^11.3.0",
+    "madge": "^8.0.0",
+    "postcss": "^8.5.3",
+    "prompts": "^2.4.2",
+    "ts-morph": "^25.0.1",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@types/css-tree": "^2.3.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.14",
+    "@types/prompts": "^2.4.9",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.23.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.3",
+    "ts-jest": "^29.3.0"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "dist/**/*",
+    "LICENSE",
+    "README.md"
+  ]
+}
