@@ -176,6 +176,25 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  apps/mobile:
+    dependencies:
+      '@mors/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@mors/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@supabase/supabase-js':
+        specifier: ^2.119.0
+        version: 2.119.0
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.10
+        version: 19.3.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+
   apps/web:
     dependencies:
       '@mors/db':

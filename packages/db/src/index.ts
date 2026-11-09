@@ -628,6 +628,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android' | 'web';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android' | 'web';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          token?: string;
+          platform?: 'ios' | 'android' | 'web';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -815,6 +842,13 @@ export type Database = {
       execute_account_hard_delete: {
         Args: {
           target_user_id: string;
+        };
+        Returns: boolean;
+      };
+      register_push_token: {
+        Args: {
+          p_token: string;
+          p_platform: string;
         };
         Returns: boolean;
       };
