@@ -607,6 +607,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      rate_limit_buckets: {
+        Row: {
+          id: string;
+          bucket_key: string;
+          window_start: string;
+          request_count: number;
+        };
+        Insert: {
+          id?: string;
+          bucket_key: string;
+          window_start?: string;
+          request_count?: number;
+        };
+        Update: {
+          id?: string;
+          bucket_key?: string;
+          window_start?: string;
+          request_count?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -774,6 +795,28 @@ export type Database = {
           url: string;
           score: number;
         }>;
+      };
+      check_rate_limit: {
+        Args: {
+          p_key: string;
+          p_max_requests: number;
+          p_window_seconds: number;
+        };
+        Returns: boolean;
+      };
+      request_account_deletion: {
+        Args: Record<string, never>;
+        Returns: string;
+      };
+      cancel_account_deletion: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
+      execute_account_hard_delete: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: boolean;
       };
     };
     Enums: {
