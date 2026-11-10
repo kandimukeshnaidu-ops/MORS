@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { CommentsSkeleton } from '@/components/ui/skeletons/LayoutSkeletons';
 import { getComments, addComment, deleteComment, type CommentItem } from '@/app/engagement/actions';
 
 interface CommentsSectionProps {
@@ -95,8 +96,8 @@ export function CommentsSection({ experienceId, onReportComment }: CommentsSecti
       {/* Comments List */}
       <div className="divide-y divide-[var(--border-subtle)] pt-2">
         {loading ? (
-          <div className="py-4 text-center text-xs text-[var(--text-muted)] animate-pulse">
-            Loading comments...
+          <div className="py-2">
+            <CommentsSkeleton count={2} />
           </div>
         ) : comments.length > 0 ? (
           comments.map((comment) => (

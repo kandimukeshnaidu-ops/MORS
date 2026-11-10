@@ -13,11 +13,22 @@ import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { DishCard } from '@/components/ui/DishCard';
 import { Modal } from '@/components/ui/Modal';
 import { AppShell } from '@/components/shell/AppShell';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { RenderingIndicator } from '@/components/ui/RenderingIndicator';
+import { BufferingContainer } from '@/components/ui/BufferingContainer';
+import {
+  ExperienceCardSkeleton,
+  CollectionListSkeleton,
+} from '@/components/ui/skeletons/LayoutSkeletons';
+import type { RenderingStage } from '@/hooks/useRenderingLifecycle';
 
 export default function DevUiGallery() {
   const [interactiveRating, setInteractiveRating] = useState<number>(7); // 3.5 stars
   const [chipSelected, setChipSelected] = useState<boolean>(true);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [activeStage, setActiveStage] = useState<RenderingStage>('processing');
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulatedData, setSimulatedData] = useState<string | null>('Initial loaded meal');
 
   return (
     <AppShell onOpenLog={() => setModalOpen(true)}>
@@ -253,6 +264,129 @@ export default function DevUiGallery() {
             </div>
           </div>
         </Modal>
+
+        {/* 10. Rendering, Buffering & Progress System */}
+        <section className="space-y-6 pt-4 border-t border-[var(--border-subtle)]">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-[var(--text-primary)]">
+              10. Rendering, Buffering & Progress System
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">
+              Multi-stage rendering lifecycle, non-fabricated progress bars, background buffering without layout shifts, and stalled error recovery.
+            </p>
+          </div>
+
+          {/* Stage Controls */}
+          <div className="space-y-3 p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+            <span className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
+              Interactive Stage Switcher
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  'initializing',
+                  'processing',
+                  'fetching',
+                  'generating',
+                  'preparing',
+                  'completed',
+                  'stalled',
+                  'error',
+                ] as RenderingStage[]
+              ).map((stage) => (
+                <Chip
+                  key={stage}
+                  label={stage}
+                  selected={activeStage === stage}
+                  onClick={() => setActiveStage(stage)}
+                />
+              ))}
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={isSimulating}
+                onClick={async () => {
+                  setIsSimulating(true);
+                  setActiveStage('initializing');
+                  await new Promise((r) => setTimeout(r, 600));
+                  setActiveStage('processing');
+                  await new Promise((r) => setTimeout(r, 600));
+                  setActiveStage('fetching');
+                  await new Promise((r) => setTimeout(r, 800));
+                  setActiveStage('generating');
+                  await new Promise((r) => setTimeout(r, 700));
+                  setActiveStage('preparing');
+                  await new Promise((r) => setTimeout(r, 500));
+                  setSimulatedData(`Fresh food story loaded at ${new Date().toLocaleTimeString()}`);
+                  setActiveStage('completed');
+                  setIsSimulating(false);
+                }}
+              >
+                {isSimulating ? 'Simulating async flow…' : '▶ Simulate 6-Stage Async Lifecycle'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSimulatedData(null)}
+              >
+                Clear Buffered Data
+              </Button>
+            </div>
+          </div>
+
+          {/* Rendering Indicators in Full and Compact Modes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <span className="text-xs font-mono text-[var(--text-muted)]">Full Card Variant</span>
+              <RenderingIndicator
+                stage={activeStage}
+                variant="full"
+                errorMessage="Database connection interrupted while resolving place metadata"
+                onRetry={() => setActiveStage('processing')}
+              />
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-mono text-[var(--text-muted)]">Compact Variant</span>
+              <RenderingIndicator
+                stage={activeStage}
+                variant="compact"
+                onRetry={() => setActiveStage('processing')}
+              />
+            </div>
+          </div>
+
+          {/* Buffering Container Preview */}
+          <div className="space-y-2">
+            <span className="text-xs font-mono text-[var(--text-muted)]">
+              Buffering Container (Preserves UI & Prevents Blank Screens)
+            </span>
+            <BufferingContainer
+              stage={activeStage}
+              hasBufferedData={Boolean(simulatedData)}
+              skeleton={<ExperienceCardSkeleton />}
+              onRetry={() => setActiveStage('processing')}
+              error={activeStage === 'error' ? 'Connection timeout' : null}
+            >
+              <div className="p-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono text-[var(--accent-primary)]">
+                    Active Rendered Content
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)]">Zero Layout Shift</span>
+                </div>
+                <h3 className="font-display text-lg font-bold text-[var(--text-primary)]">
+                  {simulatedData || 'Placeholder Meal Experience'}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Notice that when refetching or transitioning stages, this existing content remains visible at subtle opacity instead of causing a blank screen flash!
+                </p>
+              </div>
+            </BufferingContainer>
+          </div>
+        </section>
       </div>
     </AppShell>
   );

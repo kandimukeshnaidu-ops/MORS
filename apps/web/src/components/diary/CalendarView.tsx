@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { getCalendarMonth, type CalendarDaySummary } from '@/app/diary/actions';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { RenderingIndicator } from '@/components/ui/RenderingIndicator';
 
 interface CalendarViewProps {
   userId: string;
@@ -170,8 +172,15 @@ export function CalendarView({ userId, onSelectDay, selectedDate }: CalendarView
       </div>
 
       {loading && (
-        <div className="mt-3 text-center text-xs text-[var(--text-muted)] animate-pulse">
-          Loading month records...
+        <div className="mt-3 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between">
+          <RenderingIndicator
+            stage="fetching"
+            variant="inline"
+            customLabel={`Updating ${monthName} taste records…`}
+          />
+          <div className="w-24">
+            <ProgressBar size="sm" mode="indeterminate" />
+          </div>
         </div>
       )}
     </div>
