@@ -106,4 +106,21 @@ describe('Rating and UI Calculations', () => {
     const canAccessShared = (r: MockRecap) => r.shareEnabled && r.shareToken !== null;
     expect(canAccessShared(recap)).toBe(false);
   });
+
+  it('verifies Phase 21 SEO indexing gate (strictly opt-in, non-private, discoverable)', () => {
+    interface ProfileSEO {
+      isPrivate: boolean;
+      allowIndexing: boolean;
+      discoverable: boolean;
+      deletionPending: boolean;
+    }
+    const isIndexable = (p: ProfileSEO) =>
+      !p.isPrivate && p.allowIndexing && p.discoverable && !p.deletionPending;
+
+    expect(isIndexable({ isPrivate: false, allowIndexing: false, discoverable: true, deletionPending: false })).toBe(false);
+    expect(isIndexable({ isPrivate: true, allowIndexing: true, discoverable: true, deletionPending: false })).toBe(false);
+    expect(isIndexable({ isPrivate: false, allowIndexing: true, discoverable: false, deletionPending: false })).toBe(false);
+    expect(isIndexable({ isPrivate: false, allowIndexing: true, discoverable: true, deletionPending: true })).toBe(false);
+    expect(isIndexable({ isPrivate: false, allowIndexing: true, discoverable: true, deletionPending: false })).toBe(true);
+  });
 });

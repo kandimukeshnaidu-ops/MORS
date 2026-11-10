@@ -1290,6 +1290,19 @@ export type Database = {
         };
         Returns: string;
       };
+      get_indexable_public_profiles: {
+        Args: Record<string, never>;
+        Returns: Array<{
+          username: string;
+          updated_at: string;
+        }>;
+      };
+      create_personal_referral_code: {
+        Args: {
+          p_custom_suffix?: string | null;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       visibility_t: Visibility;
