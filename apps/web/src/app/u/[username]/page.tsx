@@ -9,6 +9,8 @@ import { FollowButton } from '@/components/social/FollowButton';
 import { Chip } from '@/components/ui/Chip';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { TasteStatsCard } from '@/components/profile/TasteStatsCard';
+import { getProfileTasteStats } from '@/app/explore/actions';
 
 interface ProfilePageProps {
   params: Promise<{
@@ -64,8 +66,9 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
     }
   }
 
-  // 4. Fetch experiences if permitted
+  // 4. Fetch experiences and taste statistics if permitted
   let experiences: any[] = [];
+  let tasteStats = null;
   if (canView) {
     const { data: exps } = await supabase
       .from('food_experiences')
@@ -75,6 +78,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
       .limit(20);
 
     experiences = exps || [];
+    tasteStats = await getProfileTasteStats(profile.id);
   }
 
   return (
@@ -179,6 +183,22 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
             </div>
           )}
         </header>
+
+        {/* Taste Identity & Annual Recap */}
+        {canView && tasteStats && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-mono text-[var(--text-muted)]">Verified Taste Analytics</span>
+              <Link
+                href={`/u/${profile.username}/food-year`}
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--accent-primary)] hover:underline font-mono"
+              >
+                <span>View 2026 Food Year Recap →</span>
+              </Link>
+            </div>
+            <TasteStatsCard stats={tasteStats} username={profile.username} />
+          </div>
+        )}
 
         {/* Content Section: Entries OR Locked Private State */}
         {!canView ? (

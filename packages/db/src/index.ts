@@ -852,6 +852,52 @@ export type Database = {
         };
         Returns: boolean;
       };
+      get_profile_taste_stats: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: {
+          totalMeals: number;
+          averageRating: number | null;
+          topCategory: string | null;
+          favouriteCuisines: Array<{ cuisine: string; count: number }>;
+          topRatedDishes: Array<{ name: string; rating: number; timesLogged: number }>;
+          monthlyActivity: Array<{ label: string; count: number }>;
+        } | null;
+      };
+      get_explore_trending: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: Array<{
+          id: string;
+          title: string | null;
+          eaten_at: string;
+          overall_rating: number | null;
+          cuisine: string | null;
+          author_id: string;
+          author_username: string;
+          author_display_name: string | null;
+          author_avatar_path: string | null;
+          likes_count: number;
+          comments_count: number;
+          primary_photo_path: string | null;
+          trending_score: number;
+        }>;
+      };
+      get_food_year_summary: {
+        Args: {
+          target_user_id: string;
+          p_year: number;
+        };
+        Returns: {
+          year: number;
+          totalMealsLogged: number;
+          topPlace: string | null;
+          bestDish: { name: string | null; rating: number | null };
+          topDishes: Array<{ name: string; count: number }>;
+        };
+      };
     };
     Enums: {
       visibility_t: Visibility;

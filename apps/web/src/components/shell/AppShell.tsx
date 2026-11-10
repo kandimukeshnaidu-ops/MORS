@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -11,7 +11,6 @@ export interface AppShellProps {
 
 export function AppShell({ children, onOpenLog }: AppShellProps) {
   const pathname = usePathname();
-  const [exploreComingSoon, setExploreComingSoon] = useState(false);
 
   const navItems = [
     {
@@ -44,10 +43,6 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
     {
       label: 'Explore',
       href: '/explore',
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        setExploreComingSoon(true);
-      },
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z" />
@@ -86,27 +81,6 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      {/* Explore Coming Soon Banner Modal */}
-      {exploreComingSoon && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 text-center">
-            <h3 className="font-display text-lg font-medium text-[var(--text-primary)]">
-              Explore Coming in Phase 14
-            </h3>
-            <p className="mt-2 text-xs text-[var(--text-secondary)]">
-              MORS prioritizes authentic personal logging and chronological social discovery first. Global trending and taste exploration arrive in Phase 14.
-            </p>
-            <button
-              type="button"
-              onClick={() => setExploreComingSoon(false)}
-              className="mt-5 w-full rounded-lg bg-[var(--accent-primary)] py-2 text-xs font-semibold text-[var(--bg-primary)] hover:bg-[var(--accent-hover)]"
-            >
-              Understood
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Mobile Top Header (<= 768px) */}
       <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/90 backdrop-blur-md px-4 py-3 md:hidden">
         <Link href="/" className="font-display text-xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -150,7 +124,6 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
                   <Link
                     key={item.label}
                     href={item.href}
-                    onClick={item.onClick}
                     className={`flex items-center gap-3.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors ${
                       isActive
                         ? 'bg-[var(--bg-elevated)] text-[var(--accent-primary)] font-semibold'
@@ -240,14 +213,15 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
           <span>Home</span>
         </Link>
 
-        <button
-          type="button"
-          onClick={navItems[1].onClick}
-          className="flex flex-col items-center gap-1 p-2 text-[10px] text-[var(--text-muted)]"
+        <Link
+          href="/explore"
+          className={`flex flex-col items-center gap-1 p-2 text-[10px] ${
+            pathname === '/explore' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'
+          }`}
         >
-          {navItems[1].icon}
+          {navItems[3].icon}
           <span>Explore</span>
-        </button>
+        </Link>
 
         {/* Center Prominent Log Action */}
         <button
@@ -267,7 +241,7 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
             pathname === '/collections' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'
           }`}
         >
-          {navItems[2].icon}
+          {navItems[4].icon}
           <span>Saved</span>
         </Link>
 
@@ -277,7 +251,7 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
             pathname === '/profile' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'
           }`}
         >
-          {navItems[3].icon}
+          {navItems[6].icon}
           <span>Profile</span>
         </Link>
       </nav>
