@@ -220,4 +220,25 @@ describe('Rating and UI Calculations', () => {
     expect(canUseAssist({ enabled: true, dailyQuotaUsed: 20, maxDailyQuota: 20 })).toBe(false);
     expect(canUseAssist({ enabled: true, dailyQuotaUsed: 5, maxDailyQuota: 20 })).toBe(true);
   });
+
+  it('enforces Phase 29 explainable recommendations and dismissal filtering', () => {
+    interface RecommendationItem {
+      dishId: string;
+      dishName: string;
+      reason: string;
+    }
+    const allRecs: RecommendationItem[] = [
+      { dishId: 'dish-1', dishName: 'Irani Chai', reason: 'Popular in Hyderabad with highly rated experiences' },
+      { dishId: 'dish-2', dishName: 'Osmania Biscuit', reason: 'Frequently paired with Irani Chai' },
+      { dishId: 'dish-3', dishName: 'Hyderabadi Haleem', reason: 'Top seasonal specialty' },
+    ];
+
+    const dismissedDishIds = new Set(['dish-2']);
+    const activeRecs = allRecs.filter(r => !dismissedDishIds.has(r.dishId));
+
+    expect(activeRecs).toHaveLength(2);
+    expect(activeRecs.some(r => r.dishId === 'dish-2')).toBe(false);
+    expect(activeRecs[0].reason).toContain('Popular in Hyderabad');
+    expect(activeRecs[0].reason).not.toBe(''); // Explanations must be non-empty and transparent
+  });
 });

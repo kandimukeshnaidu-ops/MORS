@@ -1258,6 +1258,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_taste_vectors: {
+        Row: {
+          user_id: string;
+          top_categories: Json;
+          top_cuisines: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          top_categories?: Json;
+          top_cuisines?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          top_categories?: Json;
+          top_cuisines?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      dish_similarity: {
+        Row: {
+          dish_a_id: string;
+          dish_b_id: string;
+          score: number;
+        };
+        Insert: {
+          dish_a_id: string;
+          dish_b_id: string;
+          score?: number;
+        };
+        Update: {
+          dish_a_id?: string;
+          dish_b_id?: string;
+          score?: number;
+        };
+        Relationships: [];
+      };
+      rec_feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          target_type: string;
+          target_id: string;
+          signal: 'dismiss' | 'not_interested';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          target_type: string;
+          target_id: string;
+          signal: 'dismiss' | 'not_interested';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          target_type?: string;
+          target_id?: string;
+          signal?: 'dismiss' | 'not_interested';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1699,6 +1765,25 @@ export type Database = {
           dish_name: string;
           source: string;
         }>;
+      };
+      get_taste_recommendations: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Array<{
+          dish_id: string;
+          dish_name: string;
+          reason: string;
+          public_rating_avg: number | null;
+        }>;
+      };
+      dismiss_recommendation: {
+        Args: {
+          p_target_id: string;
+          p_target_type: string;
+          p_signal: string;
+        };
+        Returns: void;
       };
     };
     Enums: {
