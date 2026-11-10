@@ -785,6 +785,30 @@ export type Database = {
         };
         Relationships: [];
       };
+          digest_sends: {
+        Row: {
+          id: string;
+          user_id: string;
+          digest_type: string;
+          period_key: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          digest_type: string;
+          period_key: string;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          digest_type?: string;
+          period_key?: string;
+          sent_at?: string;
+        };
+        Relationships: [];
+      };
         Views: {
       dish_public_stats: {
         Row: {
@@ -1047,7 +1071,38 @@ export type Database = {
         Returns: boolean;
       };
     };
-    Enums: {
+      get_digest_data: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          user_id: string;
+          week_experiences_count: number;
+          top_dish: {
+            dish_name: string;
+            rating: number | null;
+            eaten_at: string;
+            experience_id: string;
+          } | null;
+          diary_highlight: {
+            title: string | null;
+            eaten_at: string;
+            rating: number | null;
+            id: string;
+          } | null;
+          following_highlights: Array<{
+            id: string;
+            title: string | null;
+            author_username: string;
+            author_display_name: string | null;
+            author_avatar_path: string | null;
+            rating: number | null;
+            published_at: string;
+          }>;
+          generated_at: string;
+        } | null;
+      };
+        Enums: {
       visibility_t: Visibility;
       collection_vis_t: CollectionVisibility;
       follow_status_t: FollowStatus;

@@ -1,6 +1,6 @@
 # MORS — Implementation Plan v3 (master spec)
 
-Status: supersedes the v2 plan and the ChatGPT roadmap. Companion files: `AGENTS.md` (repo root, short rules) and `docs/PHASES.md` (per-phase tasks and acceptance). Save this file as `docs/IMPLEMENTATION_PLAN.md`.
+Status: supersedes the v2 plan and the ChatGPT roadmap. Companion files: `AGENTS.md` (repo root, short rules), `docs/PHASES.md` (phases 0-14), `docs/PHASES_POST_BETA.md` (14B and 15-21) and `docs/PHASES_NEXT.md` (22-31). Save this file as `docs/IMPLEMENTATION_PLAN.md`.
 
 If this file contradicts the product context, the product context wins. If it contradicts itself, stop and ask.
 
@@ -9,7 +9,7 @@ If this file contradicts the product context, the product context wins. If it co
 ## 0. How to use this with Antigravity
 
 1. Create `mors/`, open it as an Antigravity workspace, `git init`.
-2. Save: `AGENTS.md` (repo root), `docs/IMPLEMENTATION_PLAN.md`, `docs/PHASES.md`, and the original product context as `docs/PRODUCT_CONTEXT.md`.
+2. Save: `AGENTS.md` (repo root), `docs/IMPLEMENTATION_PLAN.md`, `docs/PHASES.md`, `docs/PHASES_POST_BETA.md`, `docs/PHASES_NEXT.md`, and the original product context as `docs/PRODUCT_CONTEXT.md`.
 3. Rule files: Antigravity reads `AGENTS.md` (supported since v1.20.3) and `GEMINI.md`; if both exist, `GEMINI.md` wins on conflicts. Workspace rules folder is `.agents/rules/`. Each rule file has a **12,000 character limit**; our `AGENTS.md` is ~6,700. Do not add `.agents/` to `.gitignore`. Behaviour differs between Antigravity CLI and Antigravity 2.0: if rules seem ignored, confirm which one you run and that `AGENTS.md` is in the active workspace root. Nested `AGENTS.md` loading is a setting (Settings → Agents) — leave it off.
 4. Known weakness: users report agents sometimes ignore rule files. Therefore every phase prompt (section 10) restates the three most critical rules, and every phase ends with a Walkthrough that must prove compliance with evidence. Never accept "done" without test output.
 5. Settings: Planning mode always; review-driven policy; terminal commands ask first (allowlist `pnpm`, `git status`, `supabase test db`); deny `supabase db reset --linked`, `supabase db push` to production, `rm -rf`. Connect any Supabase MCP to the **dev** project only.
@@ -349,16 +349,26 @@ Sizes: S = days, M ≈ 1 week, L = 1–2 weeks, XL = 2+ weeks (one developer plu
 | 12 | Account lifecycle, abuse protection, security | M | MVP | |
 | 13 | Functional audit and cross-screen polish | M | MVP | gate: registry 100% |
 | 14 | Hardening and closed beta (Hyderabad, 50–100 users) | M | MVP | launch gate |
-| 15 | Mobile app (Expo) | XL | Post-beta | |
+| 14B | Beta learning sprint (scorecard, friction fixes, opt-in retention loops, BETA_REVIEW_01) | M | Post-beta | gate: ~4 weeks of beta data |
+| 15 | Mobile app (Expo) in slices 15a/15b/15c | XL | Post-beta | gate: native justified by review |
 | 16 | Taste identity and stats | M | Post-beta P1 | needs real data |
-| 17 | Explore and discovery | L | Post-beta P1 | |
+| 17 | Explore and discovery | L | Post-beta P1 | restores 5-item nav |
 | 18 | Maps, location, rich dish/place pages | L | Post-beta P1 | consent model |
 | 19 | Social upgrades (mentions, grouped notifications, creator profiles, share) | M | Post-beta | evidence-gated |
 | 20 | Food Year recap | M | Post-beta P1 | |
-| 21 | Growth (referrals, SEO indexing, retention experiments) | M | Later | gated on D30 retention |
-| P2 | AI recommendations, scanning, taste matching, group planning, creator analytics | — | Later | |
+| 21 | Growth (referrals, SEO opt-in, experiments) | M | Later | gated on D30 retention |
+| 22 | Language and local-food search (Telugu, Hindi) | M | Later | gate in PHASES_NEXT |
+| 23 | Trust and safety at scale | L | Later | pulled forward if moderation load grows |
+| 24 | Scale, cost and reliability | L | Later | pulled forward if p95 or cost thresholds are crossed |
+| 25 | Multi-city expansion and place data | L | Later | |
+| 26 | Creator tools and private analytics | M | Later | |
+| 27 | Import and data portability | M | Later | |
+| 28 | Smart logging assist (AI, opt-in) | L | Later | needs decision 14 |
+| 29 | Taste matching and recommendations | L | Later | |
+| 30 | Group food planning | M | Later | |
+| 31 | Sustainability: MORS Plus (optional) | M | Later | needs decision 13 |
 
-Details for each phase are in `docs/PHASES.md`.
+Details: phases 0-14 in `docs/PHASES.md`, 14B and 15-21 in `docs/PHASES_POST_BETA.md`, 22-31 in `docs/PHASES_NEXT.md`. Decisions 13-17 are in PHASES_NEXT and 18-22 in PHASES_POST_BETA; record all in `docs/DECISIONS.md`.
 
 ### 8.1 Do NOT build yet (and why)
 - Direct messages / chat — moderation and privacy burden, no evidence of need.

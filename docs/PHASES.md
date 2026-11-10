@@ -263,38 +263,11 @@ Template per phase: **Objective · Size/Bucket · Depends on · Build (DB / Back
 **Tests:** launch gate checklist (§8.2) executed and attached; chaos test: kill the DB connection mid-publish; backup restore verified.
 **Acceptance:** all gate items pass; CI E2E green; no open critical RLS/security findings; the primary question is instrumented: *do people return to log and revisit?*
 
-> **Beta review checkpoint:** collect 4–6 weeks of data before starting Phase 15+. Re-rank 15–21 by evidence.
+> **Beta review checkpoint:** after about four weeks of beta data, run **Phase 14B (Beta learning sprint)**. Its output, `docs/BETA_REVIEW_01.md`, re-ranks everything below before any later phase starts.
 
 ---
 
-## Phase 15 — Mobile app, Expo (XL, post-beta)
-**Prerequisite:** beta feedback addressed.
-**Build:** `apps/mobile` with Expo Router; reuse `packages/domain`, `packages/db`, `packages/tokens` (NativeWind or equivalent); secure session storage; native Google sign-in; screens: auth, onboarding, feed, diary + calendar, log (camera/gallery, on-device compression, background upload queue with retry, offline drafts that sync), entry detail, profile, collections/Saved, search, notifications, settings; push via Expo Push + `push_tokens` + Edge Function from `notifications`; universal/deep links; store compliance (in-app deletion, reporting, blocking, privacy labels, permission strings); EAS Build/Submit and internal testing tracks.
-**Edge cases:** token refresh in background; low storage; permission denial; app killed mid-upload; push for content later hidden (server re-checks visibility before sending).
-**Acceptance:** full journey on iOS and Android; offline drafts sync; push deep-links open the right screen; same RLS rules, no client-side exceptions.
-
-## Phase 16 — Taste identity and stats (M, post-beta P1)
-**Gate:** enough real data (e.g. ≥ 50 users with ≥ 20 entries).
-**Build:** profile "Taste" section computed only from real data: totals (experiences, dishes, places), favourite cuisines, highest-rated dishes, most-logged categories, average rating, favourite places, monthly activity. Owner sees full stats (including private entries); others see stats computed from entries visible to them (public-pool or followers-visible per viewer; never revealing counts of hidden entries). Pre-computed snapshots refreshed by trigger/job; "last updated" shown. No personality labels or inferred "taste type".
-**Tests:** stats equal brute-force recompute; viewer-dependent stats never include hidden entries; empty states for new users.
-
-## Phase 17 — Explore and discovery (L, post-beta P1)
-**Build:** Explore tab (restores 5-item nav): popular dishes and places by city, public collections, new creators, recently reviewed places, trending (time-decayed likes/comments on public-pool entries, minimum thresholds), filters (cuisine, category, rating, price range, city). Recommendation reasons only from the viewer's own logs or public-pool aggregates ("Popular in Hyderabad this week", "Because you log South Indian food"). No ads/sponsored placements.
-**Tests:** public-pool-only everywhere; blocked users hidden; reason strings never leak other users' private data; cold-start behaviour.
-
-## Phase 18 — Maps, location, rich dish and place pages (L, post-beta P1)
-**Build:** explicit-consent location features (off by default); city-level precision unless a place has a public address; food map of the owner's own places and public places; rich dish/place pages (photos from public pool, top reviewers, branches); "near me" with one-shot location permission (never stored unless user saves it). Decision 1 (place data source) must be final.
-**Tests:** no precise coordinates in any payload for non-consenting users; map respects visibility; permission-denied flows.
-
-## Phase 19 — Social upgrades (M, post-beta, evidence-gated)
-**Candidates (build only what beta data justifies):** @mentions in comments (respect blocks/privacy; mention notifications only to users who can view the entry), grouped notifications ("A and 3 others liked…"), creator profiles with featured collections, shareable entry/profile links with OG previews (public pool only), better follow suggestions, comment moderation tools. Direct messaging remains out of scope.
-
-## Phase 20 — Food Year recap (M, post-beta P1)
-**Build:** annual recap from real activity: total experiences, most-logged dishes, favourite cuisines, highest-rated dish, most-visited place, biggest discoveries, top experiences, monthly activity, changes in cuisine mix. Shareable image rendered server-side from the owner's data; share only what the owner chooses to include (private entries excluded by default; owner can opt in to include them in their own recap image).
-
-## Phase 21 — Growth (M, later)
-**Gate:** D30 retention and weekly logging indicate the product is sticky.
-**Build:** referral/invite system, per-user "allow search engines" opt-in with SEO for public profiles/collections, onboarding experiments, creator onboarding, retention experiments (A/B via PostHog), public changelog.
-
-## P2 (later, each needs its own plan)
-AI recommendations, menu/receipt scanning, automatic dish recognition, taste matching, group food planning, advanced creator analytics.
+## Later phases
+- **Phase 14B and Phases 15-21** (beta learning sprint, mobile, taste identity, Explore, maps, social upgrades, Food Year, growth): `docs/PHASES_POST_BETA.md`.
+- **Phases 22-31** (language, trust and safety, scale, multi-city, creator analytics, import, AI assist, taste matching, group planning, sustainability): `docs/PHASES_NEXT.md`.
+Each of those phases starts only when its gate evidence exists.

@@ -49,7 +49,7 @@ Before using any Next.js, Supabase SSR, Tailwind or Expo API, read the CURRENT o
 
 ## Workflow
 - Use Planning mode. First produce an Implementation Plan artifact (files, migrations, components, tests, new dependencies with reasons) and WAIT for approval.
-- Read IMPLEMENTATION_PLAN.md sections 5-8 and the current phase in PHASES.md. Implement ONLY that phase and stop at its end.
+- Read IMPLEMENTATION_PLAN.md sections 5-8 and the current phase in docs/PHASES.md, docs/PHASES_POST_BETA.md or docs/PHASES_NEXT.md. Implement ONLY that phase and stop at its end.
 - If anything is ambiguous or conflicts with the plan, ask. Do not invent product decisions. Record decisions in `docs/DECISIONS.md`.
 - Never run two agents on migrations at once.
 - A phase is done only when: `pnpm typecheck && pnpm lint && pnpm test`, `supabase test db`, `pnpm check:*`, the phase's Playwright journeys, axe, and 360/768/1280 visual checks all pass, FEATURE_REGISTRY rows are green, and the Walkthrough artifact ticks every acceptance criterion with evidence (test names, screenshots) and lists anything not done.

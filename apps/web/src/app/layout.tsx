@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Newsreader } from "next/font/google";
+import { PwaRegister } from "@/components/pwa/PwaRegister";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
       follow: false,
     },
   },
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -43,6 +45,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${newsreader.variable}`}>
       <body className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased">
+        <PwaRegister />
         {children}
       </body>
     </html>
