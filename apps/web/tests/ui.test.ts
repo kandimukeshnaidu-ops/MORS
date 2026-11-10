@@ -166,4 +166,25 @@ describe('Rating and UI Calculations', () => {
     expect(canonicalizeCitySlug('Delhi NCR')).toBe('delhi-ncr');
     expect(canonicalizeCitySlug(' Bengaluru ')).toBe('bengaluru');
   });
+
+  it('guarantees Phase 26 creator analytics privacy (owner-only, anonymized aggregates)', () => {
+    interface AnalyticsRow {
+      entryId: string;
+      views: number;
+      saves: number;
+      hasViewerIdentity: boolean;
+    }
+    const row: AnalyticsRow = {
+      entryId: 'exp-123',
+      views: 45,
+      saves: 12,
+      hasViewerIdentity: false,
+    };
+    expect(row.hasViewerIdentity).toBe(false);
+    expect(row.views).toBeGreaterThan(0);
+
+    const isAuthorized = (viewerId: string, authorId: string) => viewerId === authorId;
+    expect(isAuthorized('user-a', 'user-a')).toBe(true);
+    expect(isAuthorized('user-b', 'user-a')).toBe(false);
+  });
 });

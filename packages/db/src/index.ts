@@ -1150,6 +1150,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      entry_stats_daily: {
+        Row: {
+          id: string;
+          entry_id: string;
+          day: string;
+          views: number;
+          saves: number;
+          likes: number;
+          comment_count: number;
+        };
+        Insert: {
+          id?: string;
+          entry_id: string;
+          day?: string;
+          views?: number;
+          saves?: number;
+          likes?: number;
+          comment_count?: number;
+        };
+        Update: {
+          id?: string;
+          entry_id?: string;
+          day?: string;
+          views?: number;
+          saves?: number;
+          likes?: number;
+          comment_count?: number;
+        };
+        Relationships: [];
+      };
+      profile_stats_daily: {
+        Row: {
+          id: string;
+          profile_id: string;
+          day: string;
+          profile_views: number;
+          new_followers: number;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          day?: string;
+          profile_views?: number;
+          new_followers?: number;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          day?: string;
+          profile_views?: number;
+          new_followers?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1555,6 +1609,22 @@ export type Database = {
           country: string;
           timezone: string;
         }>;
+      };
+      get_creator_analytics: {
+        Args: {
+          p_profile_id: string;
+        };
+        Returns: {
+          profile_id: string;
+          total_views_30d: number;
+          total_saves_30d: number;
+          total_likes_30d: number;
+          daily_reach: Array<{
+            day: string;
+            views: number;
+            saves: number;
+          }>;
+        } | null;
       };
     };
     Enums: {
