@@ -17,7 +17,8 @@ test.describe('MORS End-to-End User Journeys', () => {
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
 
     await page.goto('/auth/register');
-    await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /create food journal|create account/i })).toBeVisible();
+    await expect(page.getByLabel(/invite code/i)).toBeVisible();
   });
 
   test('Journey 3: Unified search typeahead and category tabs function with URL sync', async ({ page }) => {
@@ -56,5 +57,12 @@ test.describe('MORS End-to-End User Journeys', () => {
 
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     expect(bodyWidth).toBeLessThanOrEqual(360);
+  });
+
+  test('Journey 6: Beta status and operations feedback page is accessible', async ({ page }) => {
+    await page.goto('/status');
+    await expect(page.locator('h1')).toContainText('System Status & Beta Ops');
+    await expect(page.getByText('All Systems Nominal')).toBeVisible();
+    await expect(page.getByRole('link', { name: /send beta feedback/i })).toBeVisible();
   });
 });

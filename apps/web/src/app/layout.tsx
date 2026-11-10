@@ -18,6 +18,14 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: "MORS — Social Food Journal",
   description: "Your food. Your memories. Your taste. A personal, searchable archive of your food life and a community around taste.",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export const viewport: Viewport = {

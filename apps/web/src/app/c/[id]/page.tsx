@@ -23,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   return {
     title: `${coll.name} | MORS`,
     description: coll.description || `Curated collection on MORS by @${coll.author?.username}`,
-    robots: isIndexable ? { index: true, follow: true } : { index: false, follow: false },
+    robots: { index: false, follow: false },
     openGraph: {
       title: coll.name,
       description: coll.description || undefined,
