@@ -53,3 +53,14 @@ Before using any Next.js, Supabase SSR, Tailwind or Expo API, read the CURRENT o
 - If anything is ambiguous or conflicts with the plan, ask. Do not invent product decisions. Record decisions in `docs/DECISIONS.md`.
 - Never run two agents on migrations at once.
 - A phase is done only when: `pnpm typecheck && pnpm lint && pnpm test`, `supabase test db`, `pnpm check:*`, the phase's Playwright journeys, axe, and 360/768/1280 visual checks all pass, FEATURE_REGISTRY rows are green, and the Walkthrough artifact ticks every acceptance criterion with evidence (test names, screenshots) and lists anything not done.
+
+## Audit, evidence and change-control rules
+- In audit work packages, change only docs/audit/, docs/evidence/ and tests/audit/. Log bugs; never fix them in place.
+- A feature is COMPLETE only if it works end to end in a browser, persists after refresh, has correct side effects (counts, feeds, notifications), is privacy-correct when checked from a second account, and handles failure visibly. "The page renders" is not complete. Anything unproven is UNVERIFIED.
+- Every claim in a report links to evidence in docs/evidence/. No evidence, no claim.
+- Every bug fix starts with a failing test.
+- Never touch production. Never run supabase db reset --linked, db push to a remote, rm -rf, or force-push.
+- Do not rewrite the database schema, the design system, or working components without a written justification in the plan and my approval.
+- The developer machine is Windows 11: package scripts must be cross-platform.
+- Work package scope is strict. Stop at the end of the package.
+
