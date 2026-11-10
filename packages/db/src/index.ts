@@ -832,6 +832,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_stats_owner: {
+        Row: {
+          user_id: string;
+          period: 'all_time' | 'year' | 'month';
+          data: Json;
+          computed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          period: 'all_time' | 'year' | 'month';
+          data?: Json;
+          computed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          period?: 'all_time' | 'year' | 'month';
+          data?: Json;
+          computed_at?: string;
+        };
+        Relationships: [];
+      };
+      user_stats_public: {
+        Row: {
+          user_id: string;
+          period: 'all_time' | 'year' | 'month';
+          data: Json;
+          computed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          period: 'all_time' | 'year' | 'month';
+          data?: Json;
+          computed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          period?: 'all_time' | 'year' | 'month';
+          data?: Json;
+          computed_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1124,6 +1166,12 @@ export type Database = {
           }>;
           generated_at: string;
         } | null;
+      };
+      recompute_user_stats: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: void;
       };
     };
     Enums: {

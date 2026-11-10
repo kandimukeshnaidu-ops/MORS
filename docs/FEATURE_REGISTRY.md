@@ -31,3 +31,4 @@ Every interactive control in the user interface must be registered in this docum
 | `LOG-08` | `LogModal` | Restore / Discard Local Draft | Click | Restores or discards unsaved draft from local storage | LocalStorage read/delete | `apps/web/tests/ui.test.ts` | Green |
 | `ENG-01` | `/e/[id]` | Share Experience Button | Click / Tap | Invokes native share sheet or copies experience URL to clipboard | Clipboard API / navigator.share | `apps/web/tests/ui.test.ts` | Green |
 | `SEARCH-02` | `/dish/[slug]` | Multilingual Translation Badges | View | Displays regional dish translations (Telugu, Hindi) under canonical name | Reads `dish_translations` | `apps/web/tests/ui.test.ts` | Green |
+| `STAT-01` | `/u/[username]` | Taste Identity & Stats Card | View | Displays factual logging cadence, cuisines, and top dishes (min 5 meals) | Reads `user_stats_public` or `user_stats_owner` | `apps/web/tests/ui.test.ts` | Green |

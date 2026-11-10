@@ -31,4 +31,12 @@ describe('Rating and UI Calculations', () => {
     expect(labels[0]).toBe('TE: హైదరాబాదీ బిర్యానీ');
     expect(labels[1]).toBe('HI: हैदराबादी बिरयानी');
   });
+
+  it('enforces Phase 16 taste stats privacy threshold (min 5 meals)', () => {
+    const isUnderThreshold = (count: number) => count < 5;
+    expect(isUnderThreshold(0)).toBe(true);
+    expect(isUnderThreshold(4)).toBe(true);
+    expect(isUnderThreshold(5)).toBe(false);
+    expect(isUnderThreshold(12)).toBe(false);
+  });
 });

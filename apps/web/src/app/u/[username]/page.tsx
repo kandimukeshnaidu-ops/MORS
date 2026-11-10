@@ -196,7 +196,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
                 <span>View 2026 Food Year Recap →</span>
               </Link>
             </div>
-            <TasteStatsCard stats={tasteStats} username={profile.username} />
+            <TasteStatsCard stats={tasteStats} username={profile.username} isOwner={isOwner} />
           </div>
         )}
 

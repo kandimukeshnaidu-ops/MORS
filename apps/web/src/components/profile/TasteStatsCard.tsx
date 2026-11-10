@@ -5,13 +5,14 @@ import type { ProfileTasteStats } from '@/app/explore/actions';
 interface TasteStatsCardProps {
   stats: ProfileTasteStats;
   username: string;
+  isOwner?: boolean;
 }
 
-export function TasteStatsCard({ stats, username }: TasteStatsCardProps) {
-  if (stats.totalMeals === 0) {
+export function TasteStatsCard({ stats, username, isOwner = false }: TasteStatsCardProps) {
+  if (stats.totalMeals < 5) {
     return (
       <div className="p-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-center text-xs text-[var(--text-secondary)]">
-        Taste statistics will emerge once @{username} logs their first meal.
+        Taste statistics emerge once at least 5 meals are logged. (Currently {stats.totalMeals} {stats.totalMeals === 1 ? 'meal' : 'meals'} logged).
       </div>
     );
   }
@@ -23,9 +24,16 @@ export function TasteStatsCard({ stats, username }: TasteStatsCardProps) {
       {/* Header Metric Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
         <div>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--accent-primary)]">
-            Taste Identity
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono uppercase tracking-wider text-[var(--accent-primary)]">
+              Taste Identity
+            </span>
+            {!isOwner && (
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
+                From public entries
+              </span>
+            )}
+          </div>
           <h3 className="font-display text-lg font-bold text-[var(--text-primary)]">
             Culinary Activity & Consensus
           </h3>
@@ -54,13 +62,13 @@ export function TasteStatsCard({ stats, username }: TasteStatsCardProps) {
         </div>
       </div>
 
-      {/* Monthly Activity Histogram */}
+      {/* Monthly Activity Histogram with Accessible Data Table */}
       {stats.monthlyActivity.length > 0 && (
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="font-medium text-[var(--text-secondary)]">Logging Cadence (Last 6 Months)</span>
           </div>
-          <div className="flex items-end justify-between gap-2 h-16 pt-2">
+          <div className="flex items-end justify-between gap-2 h-16 pt-2" aria-hidden="true">
             {stats.monthlyActivity.map((m) => {
               const heightPercent = Math.max(10, Math.round((m.count / maxMonthCount) * 100));
               return (
@@ -75,6 +83,25 @@ export function TasteStatsCard({ stats, username }: TasteStatsCardProps) {
               );
             })}
           </div>
+
+          {/* Accessible Table for Screen Readers */}
+          <table className="sr-only">
+            <caption>Monthly Meal Logging Cadence</caption>
+            <thead>
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Meals Logged</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.monthlyActivity.map((m) => (
+                <tr key={m.label}>
+                  <td>{m.label}</td>
+                  <td>{m.count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
