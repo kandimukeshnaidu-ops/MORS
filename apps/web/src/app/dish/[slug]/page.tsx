@@ -73,6 +73,22 @@ export default async function DishDetailPage({ params }: DishPageProps) {
             {dish.name}
           </h1>
 
+          {dish.translations && dish.translations.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {dish.translations.map((t) => (
+                <span
+                  key={t.locale}
+                  className="rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2.5 py-1 text-xs text-[var(--text-secondary)] font-medium"
+                >
+                  <span className="text-[10px] uppercase font-mono text-[var(--accent-primary)] mr-1.5">
+                    {t.locale === 'te' ? 'Telugu' : t.locale === 'hi' ? 'Hindi' : t.locale}:
+                  </span>
+                  {t.name}
+                </span>
+              ))}
+            </div>
+          )}
+
           {dish.description && (
             <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
               {dish.description}

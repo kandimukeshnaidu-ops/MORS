@@ -29,6 +29,7 @@ export interface PublicDishData {
     eatenAt: string;
     thumbnailUrl: string | null;
   }>;
+  translations?: Array<{ locale: string; name: string }>;
 }
 
 export interface PublicPlaceData {
@@ -195,6 +196,17 @@ export async function getDishBySlug(slug: string): Promise<PublicDishData | null
     };
   });
 
+  // 5. Fetch translations (Phase 22)
+  const { data: transRows } = await supabase
+    .from('dish_translations')
+    .select('locale, name')
+    .eq('dish_id', canonicalDish.id);
+
+  const translations = (transRows || []).map((t) => ({
+    locale: t.locale,
+    name: t.name,
+  }));
+
   return {
     id: canonicalDish.id,
     name: canonicalDish.name,
@@ -204,6 +216,7 @@ export async function getDishBySlug(slug: string): Promise<PublicDishData | null
     stats,
     viewerPersonal,
     recentExperiences,
+    translations,
   };
 }
 

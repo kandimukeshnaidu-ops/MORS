@@ -733,7 +733,6 @@ export type Database = {
         };
         Relationships: [];
       };
-    };
       invite_codes: {
         Row: {
           id: string;
@@ -809,7 +808,32 @@ export type Database = {
         };
         Relationships: [];
       };
-        Views: {
+          dish_translations: {
+        Row: {
+          id: string;
+          dish_id: string;
+          locale: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          dish_id: string;
+          locale: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          dish_id?: string;
+          locale?: string;
+          name?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: {
       dish_public_stats: {
         Row: {
           dish_id: string;
@@ -1070,7 +1094,6 @@ export type Database = {
         };
         Returns: boolean;
       };
-    };
       get_digest_data: {
         Args: {
           p_user_id: string;
@@ -1102,7 +1125,8 @@ export type Database = {
           generated_at: string;
         } | null;
       };
-        Enums: {
+    };
+    Enums: {
       visibility_t: Visibility;
       collection_vis_t: CollectionVisibility;
       follow_status_t: FollowStatus;

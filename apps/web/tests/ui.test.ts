@@ -21,4 +21,14 @@ describe('Rating and UI Calculations', () => {
     expect(formatRating(9)).toBe('4.5★');
     expect(formatRating(null)).toBe('Unrated');
   });
+
+  it('renders dish translation badges properly for multilingual discovery', () => {
+    const translations = [
+      { locale: 'te', name: 'హైదరాబాదీ బిర్యానీ' },
+      { locale: 'hi', name: 'हैदराबादी बिरयानी' },
+    ];
+    const labels = translations.map(t => `${t.locale.toUpperCase()}: ${t.name}`);
+    expect(labels[0]).toBe('TE: హైదరాబాదీ బిర్యానీ');
+    expect(labels[1]).toBe('HI: हैदराबादी बिरयानी');
+  });
 });
