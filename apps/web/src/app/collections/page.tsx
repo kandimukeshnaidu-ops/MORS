@@ -112,6 +112,11 @@ export default function CollectionsPage() {
                         ★
                       </span>
                     )}
+                    {c.systemKey === 'saved' && (
+                      <span className="text-xs text-[var(--accent-primary)]" title="Saved Collection">
+                        🔖
+                      </span>
+                    )}
                     <h3 className="font-display text-base font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors truncate">
                       {c.name}
                     </h3>

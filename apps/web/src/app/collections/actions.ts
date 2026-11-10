@@ -13,6 +13,7 @@ export interface CollectionSummary {
   visibility: CollectionVisibility;
   shareToken: string;
   isWishlist: boolean;
+  systemKey?: string | null;
   itemsCount: number;
   likesCount: number;
   createdAt: string;
@@ -75,7 +76,7 @@ export async function getUserCollections(targetUserId?: string): Promise<Collect
     .from('collections')
     .select(`
       id, user_id, name, description, cover_photo_path, visibility,
-      share_token, is_wishlist, items_count, likes_count, created_at, updated_at
+      share_token, is_wishlist, system_key, items_count, likes_count, created_at, updated_at
     `)
     .eq('user_id', queryUserId)
     .order('is_wishlist', { ascending: false })
@@ -94,6 +95,7 @@ export async function getUserCollections(targetUserId?: string): Promise<Collect
     visibility: c.visibility,
     shareToken: c.share_token,
     isWishlist: c.is_wishlist,
+    systemKey: c.system_key,
     itemsCount: c.items_count,
     likesCount: c.likes_count,
     createdAt: c.created_at,
@@ -143,6 +145,7 @@ export async function getPublicCollections(limit = 20): Promise<CollectionSummar
     visibility: c.visibility,
     shareToken: c.share_token,
     isWishlist: c.is_wishlist,
+    systemKey: c.system_key,
     itemsCount: c.items_count,
     likesCount: c.likes_count,
     createdAt: c.created_at,
@@ -517,3 +520,82 @@ export async function getOrCreateWishlist(): Promise<{ wishlistId?: string; erro
 
   return { wishlistId: data };
 }
+
+/**
+ * Retrieves or creates the user's private system collection "Saved" (system_key = 'saved').
+ */
+export async function getOrCreateSavedCollection(): Promise<{ collectionId?: string; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { error: 'Authentication required' };
+
+  // 1. Check if Saved collection exists
+  const { data: existing } = await supabase
+    .from('collections')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('system_key', 'saved')
+    .maybeSingle();
+
+  if (existing) {
+    return { collectionId: existing.id };
+  }
+
+  // 2. Create Saved system collection
+  const { data: created, error } = await supabase
+    .from('collections')
+    .insert({
+      user_id: user.id,
+      name: 'Saved',
+      description: 'Your private archive of saved dishes, places, and food experiences.',
+      visibility: 'private',
+      system_key: 'saved',
+      is_wishlist: false,
+    })
+    .select('id')
+    .single();
+
+  if (error || !created) {
+    return { error: error?.message || 'Failed to create Saved collection' };
+  }
+
+  return { collectionId: created.id };
+}
+
+/**
+ * Toggles an item in the user's private "Saved" system collection (one-tap bookmarking).
+ */
+export async function toggleSaveItem(
+  itemType: 'experience' | 'dish' | 'place',
+  targetId: string
+): Promise<{ saved: boolean; error?: string }> {
+  const { collectionId, error } = await getOrCreateSavedCollection();
+  if (error || !collectionId) return { saved: false, error };
+
+  const supabase = await createClient();
+
+  const fieldMap = {
+    experience: 'experience_id',
+    dish: 'dish_id',
+    place: 'place_id',
+  } as const;
+
+  const targetField = fieldMap[itemType];
+
+  const { data: existingItem } = await supabase
+    .from('collection_items')
+    .select('id')
+    .eq('collection_id', collectionId)
+    .eq(targetField, targetId)
+    .maybeSingle();
+
+  if (existingItem) {
+    await removeItemFromCollection(existingItem.id, collectionId);
+    return { saved: false };
+  } else {
+    await addItemToCollection(collectionId, { itemType, targetId });
+    return { saved: true };
+  }
+}
+
