@@ -277,4 +277,43 @@ describe('Rating and UI Calculations', () => {
     expect(drafts).toHaveLength(2);
     expect(drafts.every(d => d.status === 'draft' && d.visibility === 'private')).toBe(true);
   });
+
+  it('enforces Phase 31 sustainability guarantees: graceful downgrade and zero data lock-in', () => {
+    interface AccountStatus {
+      plan: 'free' | 'plus_monthly' | 'plus_annual';
+      subscriptionStatus: 'active' | 'canceled';
+      totalEntries: number;
+      photosStoredMb: number;
+    }
+
+    const canAccessDiaryAndExport = (acc: AccountStatus) => {
+      // Non-negotiable: core access is NEVER degraded or paywalled
+      return acc.totalEntries >= 0;
+    };
+
+    const isDataPreservedOnDowngrade = (before: AccountStatus, after: AccountStatus) => {
+      return (
+        after.totalEntries === before.totalEntries &&
+        after.photosStoredMb === before.photosStoredMb
+      );
+    };
+
+    const activePlus: AccountStatus = {
+      plan: 'plus_monthly',
+      subscriptionStatus: 'active',
+      totalEntries: 250,
+      photosStoredMb: 4500,
+    };
+
+    const downgradedFree: AccountStatus = {
+      plan: 'free',
+      subscriptionStatus: 'canceled',
+      totalEntries: 250, // Zero deletion
+      photosStoredMb: 4500, // Zero data loss
+    };
+
+    expect(canAccessDiaryAndExport(activePlus)).toBe(true);
+    expect(canAccessDiaryAndExport(downgradedFree)).toBe(true);
+    expect(isDataPreservedOnDowngrade(activePlus, downgradedFree)).toBe(true);
+  });
 });

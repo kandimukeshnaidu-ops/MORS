@@ -1409,6 +1409,72 @@ export type Database = {
         };
         Relationships: [];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          provider: 'stripe' | 'razorpay' | 'test';
+          provider_sub_id: string;
+          plan: 'plus_monthly' | 'plus_annual' | 'patron';
+          status: 'active' | 'past_due' | 'canceled' | 'trialing';
+          current_period_start: string;
+          current_period_end: string;
+          cancel_at_period_end: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: 'stripe' | 'razorpay' | 'test';
+          provider_sub_id: string;
+          plan: 'plus_monthly' | 'plus_annual' | 'patron';
+          status: 'active' | 'past_due' | 'canceled' | 'trialing';
+          current_period_start?: string;
+          current_period_end: string;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          provider?: 'stripe' | 'razorpay' | 'test';
+          provider_sub_id?: string;
+          plan?: 'plus_monthly' | 'plus_annual' | 'patron';
+          status?: 'active' | 'past_due' | 'canceled' | 'trialing';
+          current_period_start?: string;
+          current_period_end?: string;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      entitlement_grants: {
+        Row: {
+          id: string;
+          user_id: string;
+          entitlement_key: 'storage_boost_10gb' | 'printable_recap' | 'advanced_analytics' | 'custom_theme';
+          granted_at: string;
+          expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          entitlement_key: 'storage_boost_10gb' | 'printable_recap' | 'advanced_analytics' | 'custom_theme';
+          granted_at?: string;
+          expires_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          entitlement_key?: 'storage_boost_10gb' | 'printable_recap' | 'advanced_analytics' | 'custom_theme';
+          granted_at?: string;
+          expires_at?: string | null;
+        };
+        Relationships: [];
+      };
     Views: {
       dish_public_stats: {
         Row: {
@@ -1869,7 +1935,6 @@ export type Database = {
         };
         Returns: void;
       };
-    };
       cast_plan_vote: {
         Args: {
           p_plan_id: string;
@@ -1884,6 +1949,20 @@ export type Database = {
         };
         Returns: number;
       };
+      has_entitlement: {
+        Args: {
+          p_user_id: string;
+          p_key: string;
+        };
+        Returns: boolean;
+      };
+      cancel_user_subscription: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
+    };
     Enums: {
       visibility_t: Visibility;
       collection_vis_t: CollectionVisibility;

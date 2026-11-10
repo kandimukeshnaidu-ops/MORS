@@ -8,6 +8,7 @@ import {
   exportUserData,
   requestAccountDeletion,
   cancelAccountDeletion,
+  cancelSubscriptionAction,
 } from '@/app/settings/actions';
 import { updateProfile, logout } from '@/app/auth/actions';
 import type { Visibility } from '@mors/db';
@@ -51,6 +52,10 @@ export function SettingsClientView({ initialProfile }: SettingsClientViewProps) 
     initialProfile.deletionRequestedAt
   );
   const [deleting, setDeleting] = useState(false);
+
+  // Subscription State
+  const [cancellingSub, setCancellingSub] = useState(false);
+  const [subMsg, setSubMsg] = useState<string | null>(null);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -341,7 +346,56 @@ export function SettingsClientView({ initialProfile }: SettingsClientViewProps) 
         </Button>
       </div>
 
-      {/* 4. Danger Zone: Deletion & Sign Out */}
+      {/* 4. Sustainability & MORS Plus */}
+      <div className="p-6 rounded-2xl border border-[var(--border-subtle)] bg-[var(--surface)] space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-2">
+          <h2 className="font-display text-base font-semibold text-[var(--text-primary)]">
+            Sustainability & Membership
+          </h2>
+          <span className="text-[11px] font-medium text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded-full border border-[var(--accent)]/20">
+            Community Tier
+          </span>
+        </div>
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          MORS will never show ads or sell your taste data. Logging, personal history, search, and full data export remain free forever. MORS Plus is an optional patron subscription that funds independent server hosting and unlocks higher storage quotas.
+        </p>
+        <div className="rounded-xl border border-[var(--border-subtle)] p-4 bg-[var(--surface-subtle)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h4 className="text-xs font-semibold text-[var(--text-primary)]">
+              Photo Storage & Quota
+            </h4>
+            <p className="text-[11px] text-[var(--text-secondary)]">
+              2 GB high-resolution meal storage included. Free accounts never expire.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              setCancellingSub(true);
+              setSubMsg(null);
+              const res = await cancelSubscriptionAction();
+              setCancellingSub(false);
+              if (res.error) {
+                setSubMsg(res.error);
+              } else {
+                setSubMsg('Subscription set to cancel at end of period. Your data remains completely accessible.');
+              }
+            }}
+            isLoading={cancellingSub}
+          >
+            Manage Billing
+          </Button>
+        </div>
+        {subMsg && (
+          <p className="text-xs text-[var(--text-secondary)] italic">
+            {subMsg}
+          </p>
+        )}
+      </div>
+
+      {/* 5. Danger Zone: Deletion & Sign Out */}
       <div className="p-6 rounded-2xl border border-[var(--danger-text)]/40 bg-[var(--danger-bg)]/20 space-y-4">
         <h2 className="font-display text-base font-semibold text-[var(--danger-text)] border-b border-[var(--danger-text)]/20 pb-2">
           Danger Zone

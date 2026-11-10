@@ -204,3 +204,21 @@ export async function cancelAccountDeletion(): Promise<{ success: boolean; error
   revalidatePath('/settings');
   return { success: true };
 }
+
+/**
+ * Cancels active subscription at current billing period end in one click.
+ */
+export async function cancelSubscriptionAction(): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Authentication required' };
+
+  const { error } = await supabase.rpc('cancel_user_subscription', {
+    p_user_id: user.id,
+  });
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/settings');
+  return { success: true };
+}
