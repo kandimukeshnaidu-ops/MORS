@@ -172,6 +172,7 @@ export type Database = {
           parent_place_id: string | null;
           address: string | null;
           city: string | null;
+          city_id: string | null;
           country: string;
           lat: number | null;
           lng: number | null;
@@ -190,6 +191,7 @@ export type Database = {
           parent_place_id?: string | null;
           address?: string | null;
           city?: string | null;
+          city_id?: string | null;
           country?: string;
           lat?: number | null;
           lng?: number | null;
@@ -208,6 +210,7 @@ export type Database = {
           parent_place_id?: string | null;
           address?: string | null;
           city?: string | null;
+          city_id?: string | null;
           country?: string;
           lat?: number | null;
           lng?: number | null;
@@ -1105,6 +1108,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      cities: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          name_local: string | null;
+          state: string;
+          country: string;
+          lat: number;
+          lng: number;
+          timezone: string;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          name_local?: string | null;
+          state: string;
+          country?: string;
+          lat: number;
+          lng: number;
+          timezone?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          name_local?: string | null;
+          state?: string;
+          country?: string;
+          lat?: number;
+          lng?: number;
+          timezone?: string;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1498,6 +1543,18 @@ export type Database = {
           percentage: number;
           is_near_quota: boolean;
         } | null;
+      };
+      get_active_cities: {
+        Args: Record<string, never>;
+        Returns: Array<{
+          id: string;
+          slug: string;
+          name: string;
+          name_local: string | null;
+          state: string;
+          country: string;
+          timezone: string;
+        }>;
       };
     };
     Enums: {

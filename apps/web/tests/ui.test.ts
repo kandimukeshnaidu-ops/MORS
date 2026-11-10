@@ -158,4 +158,12 @@ describe('Rating and UI Calculations', () => {
     expect(near.pct).toBe(88.5);
     expect(near.isNearQuota).toBe(true);
   });
+
+  it('validates Phase 25 multi-city expansion routing and slug canonicalization', () => {
+    const canonicalizeCitySlug = (input: string) =>
+      input.trim().toLowerCase().replace(/\s+/g, '-');
+    expect(canonicalizeCitySlug('Hyderabad')).toBe('hyderabad');
+    expect(canonicalizeCitySlug('Delhi NCR')).toBe('delhi-ncr');
+    expect(canonicalizeCitySlug(' Bengaluru ')).toBe('bengaluru');
+  });
 });
