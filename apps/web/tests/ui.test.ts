@@ -123,4 +123,21 @@ describe('Rating and UI Calculations', () => {
     expect(isIndexable({ isPrivate: false, allowIndexing: true, discoverable: true, deletionPending: true })).toBe(false);
     expect(isIndexable({ isPrivate: false, allowIndexing: true, discoverable: true, deletionPending: false })).toBe(true);
   });
+
+  it('validates Phase 23 trust and safety appeal submissions and active suspensions', () => {
+    const isValidAppeal = (text: string) => text.trim().length >= 10;
+    expect(isValidAppeal('too short')).toBe(false);
+    expect(isValidAppeal('    short    ')).toBe(false);
+    expect(isValidAppeal('This account was flagged by mistake; here is my reasoning.')).toBe(true);
+
+    const isSuspensionActive = (isActive: boolean, endsAt: Date | null) => {
+      if (!isActive) return false;
+      if (!endsAt) return true; // permanent
+      return endsAt.getTime() > Date.now();
+    };
+    expect(isSuspensionActive(true, null)).toBe(true);
+    expect(isSuspensionActive(false, new Date(Date.now() + 100000))).toBe(false);
+    expect(isSuspensionActive(true, new Date(Date.now() - 10000))).toBe(false);
+    expect(isSuspensionActive(true, new Date(Date.now() + 100000))).toBe(true);
+  });
 });

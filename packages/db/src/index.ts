@@ -934,6 +934,156 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_strikes: {
+        Row: {
+          id: string;
+          user_id: string;
+          reason: string;
+          issued_by: string | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          reason: string;
+          issued_by?: string | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          reason?: string;
+          issued_by?: string | null;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
+      suspensions: {
+        Row: {
+          id: string;
+          user_id: string;
+          starts_at: string;
+          ends_at: string | null;
+          reason: string;
+          issued_by: string | null;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          starts_at?: string;
+          ends_at?: string | null;
+          reason: string;
+          issued_by?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          starts_at?: string;
+          ends_at?: string | null;
+          reason?: string;
+          issued_by?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      appeals: {
+        Row: {
+          id: string;
+          user_id: string;
+          action_id: string | null;
+          text: string;
+          status: 'pending' | 'approved' | 'rejected';
+          handled_by: string | null;
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          action_id?: string | null;
+          text: string;
+          status?: 'pending' | 'approved' | 'rejected';
+          handled_by?: string | null;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          action_id?: string | null;
+          text?: string;
+          status?: 'pending' | 'approved' | 'rejected';
+          handled_by?: string | null;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Relationships: [];
+      };
+      trusted_reporters: {
+        Row: {
+          user_id: string;
+          trust_score: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          trust_score?: number;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          trust_score?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      spam_signals: {
+        Row: {
+          id: string;
+          user_id: string;
+          signal: string;
+          score: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          signal: string;
+          score?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          signal?: string;
+          score?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      content_hashes: {
+        Row: {
+          sha256: string;
+          status: string;
+          added_at: string;
+        };
+        Insert: {
+          sha256: string;
+          status?: string;
+          added_at?: string;
+        };
+        Update: {
+          sha256?: string;
+          status?: string;
+          added_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1302,6 +1452,19 @@ export type Database = {
           p_custom_suffix?: string | null;
         };
         Returns: string;
+      };
+      submit_user_appeal: {
+        Args: {
+          p_action_id: string;
+          p_text: string;
+        };
+        Returns: string;
+      };
+      check_user_is_suspended: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
     };
     Enums: {
