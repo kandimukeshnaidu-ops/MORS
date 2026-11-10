@@ -1084,6 +1084,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      storage_quotas: {
+        Row: {
+          user_id: string;
+          quota_bytes: number;
+          used_bytes: number;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          quota_bytes?: number;
+          used_bytes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          quota_bytes?: number;
+          used_bytes?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1465,6 +1486,18 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      get_user_storage_usage: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          user_id: string;
+          quota_bytes: number;
+          used_bytes: number;
+          percentage: number;
+          is_near_quota: boolean;
+        } | null;
       };
     };
     Enums: {

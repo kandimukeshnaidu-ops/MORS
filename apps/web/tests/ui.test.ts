@@ -140,4 +140,22 @@ describe('Rating and UI Calculations', () => {
     expect(isSuspensionActive(true, new Date(Date.now() - 10000))).toBe(false);
     expect(isSuspensionActive(true, new Date(Date.now() + 100000))).toBe(true);
   });
+
+  it('calculates Phase 24 storage quota consumption and near-quota warnings', () => {
+    const calcQuota = (used: number, total: number) => {
+      const pct = (used / total) * 100;
+      return {
+        pct: Number(pct.toFixed(1)),
+        isNearQuota: pct >= 85.0,
+      };
+    };
+    const twoGB = 2147483648;
+    const under = calcQuota(500000000, twoGB);
+    expect(under.pct).toBe(23.3);
+    expect(under.isNearQuota).toBe(false);
+
+    const near = calcQuota(1900000000, twoGB);
+    expect(near.pct).toBe(88.5);
+    expect(near.isNearQuota).toBe(true);
+  });
 });
