@@ -102,7 +102,7 @@ export default async function PlaceDetailPage({ params }: PlacePageProps) {
               <span className="text-xs font-mono text-[var(--text-muted)]">Public Only</span>
             </div>
 
-            {place.stats.publicExperienceCount > 0 ? (
+            {place.stats.publicExperienceCount >= 3 ? (
               <div className="space-y-2">
                 <div className="flex items-baseline gap-3">
                   <span className="font-display text-4xl font-bold text-[var(--text-primary)]">
@@ -126,9 +126,14 @@ export default async function PlaceDetailPage({ params }: PlacePageProps) {
                 </p>
               </div>
             ) : (
-              <div className="py-4 text-center">
-                <p className="text-xs text-[var(--text-muted)]">
-                  No public ratings yet for this location.
+              <div className="py-6 text-center space-y-2">
+                <p className="font-display text-base font-medium text-[var(--text-primary)]">
+                  Not Enough Ratings Yet
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto">
+                  {place.stats.publicExperienceCount === 0
+                    ? 'No public ratings yet for this location. Be the first to log a meal here!'
+                    : `Currently has ${place.stats.publicExperienceCount} public log. At least 3 eating occasions are required before community consensus is displayed.`}
                 </p>
               </div>
             )}

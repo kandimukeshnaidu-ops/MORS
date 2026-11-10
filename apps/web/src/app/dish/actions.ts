@@ -67,7 +67,7 @@ export async function getDishBySlug(slug: string): Promise<PublicDishData | null
   // 1. Fetch dish
   const { data: dish, error } = await supabase
     .from('dishes')
-    .select('id, name, slug, cuisine, description, merged_into_id')
+    .select('id, name, slug, cuisine, description, merged_into_id, is_listed, created_by')
     .eq('slug', slug)
     .single();
 
@@ -75,12 +75,17 @@ export async function getDishBySlug(slug: string): Promise<PublicDishData | null
     return null;
   }
 
+  // Non-negotiable #11: Unlisted dishes visible ONLY to creator
+  if (!dish.is_listed && (!user || user.id !== dish.created_by)) {
+    return null; // Return not found, never forbidden
+  }
+
   // Follow redirect if merged
   let canonicalDish = dish;
   if (dish.merged_into_id) {
     const { data: canonical } = await supabase
       .from('dishes')
-      .select('id, name, slug, cuisine, description, merged_into_id')
+      .select('id, name, slug, cuisine, description, merged_into_id, is_listed, created_by')
       .eq('id', dish.merged_into_id)
       .single();
     if (canonical) canonicalDish = canonical;
@@ -211,7 +216,7 @@ export async function getPlaceById(id: string): Promise<PublicPlaceData | null> 
 
   const { data: place, error } = await supabase
     .from('places')
-    .select('id, name, city, address, parent_place_id, merged_into_id')
+    .select('id, name, city, address, parent_place_id, merged_into_id, is_listed, created_by')
     .eq('id', id)
     .single();
 
@@ -219,11 +224,16 @@ export async function getPlaceById(id: string): Promise<PublicPlaceData | null> 
     return null;
   }
 
+  // Non-negotiable #11: Unlisted places visible ONLY to creator
+  if (!place.is_listed && (!user || user.id !== place.created_by)) {
+    return null; // Return not found, never forbidden
+  }
+
   let canonicalPlace = place;
   if (place.merged_into_id) {
     const { data: canonical } = await supabase
       .from('places')
-      .select('id, name, city, address, parent_place_id, merged_into_id')
+      .select('id, name, city, address, parent_place_id, merged_into_id, is_listed, created_by')
       .eq('id', place.merged_into_id)
       .single();
     if (canonical) canonicalPlace = canonical;

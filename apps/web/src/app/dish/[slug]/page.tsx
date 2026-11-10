@@ -91,7 +91,7 @@ export default async function DishDetailPage({ params }: DishPageProps) {
               <span className="text-xs font-mono text-[var(--text-muted)]">Public Only</span>
             </div>
 
-            {dish.stats.publicRatingCount > 0 ? (
+            {dish.stats.publicRatingCount >= 3 ? (
               <div className="space-y-2">
                 <div className="flex items-baseline gap-3">
                   <span className="font-display text-4xl font-bold text-[var(--text-primary)]">
@@ -114,9 +114,14 @@ export default async function DishDetailPage({ params }: DishPageProps) {
                 </p>
               </div>
             ) : (
-              <div className="py-4 text-center">
-                <p className="text-xs text-[var(--text-muted)]">
-                  No public ratings yet. Be the first to log this dish!
+              <div className="py-6 text-center space-y-2">
+                <p className="font-display text-base font-medium text-[var(--text-primary)]">
+                  Not Enough Ratings Yet
+                </p>
+                <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto">
+                  {dish.stats.publicRatingCount === 0
+                    ? 'No public ratings logged yet. Be the first to log and rate this dish!'
+                    : `Currently has ${dish.stats.publicRatingCount} public rating. At least 3 ratings are required before community consensus is calculated to protect cook privacy.`}
                 </p>
               </div>
             )}
