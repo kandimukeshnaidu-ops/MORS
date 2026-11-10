@@ -1228,6 +1228,21 @@ export type Database = {
           public_rating_avg: number | null;
         }>;
       };
+      get_grouped_notifications: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Array<{
+          group_key: string;
+          notification_type: NotificationType;
+          target_id: string | null;
+          latest_created_at: string;
+          total_actors: number;
+          actors: Json;
+          sample_message: string;
+          is_read: boolean;
+        }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;

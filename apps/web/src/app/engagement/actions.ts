@@ -20,7 +20,7 @@ export interface CommentItem {
 
 export interface NotificationItem {
   id: string;
-  type: 'like' | 'comment' | 'follow_request' | 'follow_accept';
+  type: 'like' | 'comment' | 'follow_request' | 'follow_accept' | 'mention';
   actor: {
     id: string;
     username: string;

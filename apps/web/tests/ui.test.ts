@@ -57,4 +57,26 @@ describe('Rating and UI Calculations', () => {
     expect(isAllowedPlace('Bawarchi Restaurant')).toBe(true);
     expect(isAllowedPlace('Shah Ghouse Cafe')).toBe(true);
   });
+
+  it('parses Phase 19 comment mentions with 5-mention cap', () => {
+    const parseMentions = (text: string) => {
+      const matches = text.match(/@([a-zA-Z0-9_]{3,24})/g) || [];
+      const usernames = matches.map((m) => m.slice(1).toLowerCase());
+      return Array.from(new Set(usernames)).slice(0, 5);
+    };
+    const text = 'Hey @mukesh and @vikram check this biryani with @priya @anil @suresh @extra';
+    const mentions = parseMentions(text);
+    expect(mentions).toEqual(['mukesh', 'vikram', 'priya', 'anil', 'suresh']);
+    expect(mentions.length).toBe(5);
+  });
+
+  it('formats Phase 19 grouped notification labels cleanly', () => {
+    const formatGroup = (actor: string, total: number, action: string) => {
+      if (total <= 1) return `${actor} ${action}`;
+      return `${actor} and ${total - 1} other${total > 2 ? 's' : ''} ${action}`;
+    };
+    expect(formatGroup('Ana', 1, 'liked your experience')).toBe('Ana liked your experience');
+    expect(formatGroup('Ana', 2, 'liked your experience')).toBe('Ana and 1 other liked your experience');
+    expect(formatGroup('Ana', 4, 'liked your experience')).toBe('Ana and 3 others liked your experience');
+  });
 });

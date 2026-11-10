@@ -47,6 +47,8 @@ export default function NotificationsPage() {
         return `liked your food experience "${item.experienceTitle || 'Meal'}"`;
       case 'comment':
         return `commented on your food experience "${item.experienceTitle || 'Meal'}"`;
+      case 'mention':
+        return `mentioned you in a comment`;
       case 'follow_request':
         return 'requested to follow your food journal';
       case 'follow_accept':
@@ -62,6 +64,8 @@ export default function NotificationsPage() {
         return '❤️';
       case 'comment':
         return '💬';
+      case 'mention':
+        return '📣';
       case 'follow_request':
         return '👥';
       case 'follow_accept':
