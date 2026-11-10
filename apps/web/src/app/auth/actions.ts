@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { UsernameSchema, ProfileUpdateSchema } from '@mors/domain';
+import { UsernameSchema, ProfileUpdateSchema, InviteCodeSchema } from '@mors/domain';
 
 export async function login(formData: FormData) {
   const email = formData.get('email') as string;
@@ -31,10 +31,11 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const inviteCode = ((formData.get('inviteCode') as string) || '').trim().toUpperCase();
   const confirmAge = formData.get('confirmAge') === 'on';
 
   if (!confirmAge) {
-    return { error: 'You must confirm that you are at least 16 years of age' };
+    return { error: 'You must confirm that you are at least 18 years of age' };
   }
 
   if (!email || !password) {
@@ -45,17 +46,43 @@ export async function signup(formData: FormData) {
     return { error: 'Password must be at least 8 characters long' };
   }
 
+  const codeParse = InviteCodeSchema.safeParse(inviteCode);
+  if (!codeParse.success) {
+    return { error: 'A valid beta invite code is required during closed beta' };
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+
+  // Validate invite code against DB before creating account
+  const { data: isValid, error: codeErr } = await supabase.rpc('check_invite_code', {
+    p_code: inviteCode,
+  });
+
+  if (codeErr || !isValid) {
+    return { error: 'Invalid or expired beta invite code. MORS is currently in closed beta.' };
+  }
+
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      data: {
+        invite_code: inviteCode,
+      },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
     },
   });
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (data?.user) {
+    // Attempt atomic redemption
+    await supabase.rpc('redeem_invite_code', {
+      p_code: inviteCode,
+      p_user_id: data.user.id,
+    });
   }
 
   revalidatePath('/', 'layout');
@@ -106,6 +133,19 @@ export async function completeOnboarding(formData: FormData) {
 
   if (!user) {
     return { error: 'Authentication required' };
+  }
+
+  // Ensure invite redemption is recorded if invite_code is in user metadata
+  const userInviteCode = user.user_metadata?.invite_code;
+  if (userInviteCode) {
+    try {
+      await supabase.rpc('redeem_invite_code', {
+        p_code: userInviteCode,
+        p_user_id: user.id,
+      });
+    } catch {
+      // Ignore if already redeemed
+    }
   }
 
   // Update profile

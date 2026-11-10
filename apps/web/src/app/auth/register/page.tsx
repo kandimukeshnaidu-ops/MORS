@@ -35,7 +35,7 @@ export default function RegisterPage() {
             Begin your food archive
           </h1>
           <p className="mt-1 text-xs text-[var(--text-secondary)]">
-            Document meals, rate tastes, and revisit your food history
+            Private Beta · Hyderabad · By invitation only
           </p>
         </div>
 
@@ -46,6 +46,16 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            id="inviteCode"
+            name="inviteCode"
+            type="text"
+            label="Beta Invite Code"
+            placeholder="e.g. HYDERABAD-BETA-2026"
+            required
+            autoCapitalize="characters"
+          />
+
           <Input
             id="email"
             name="email"
@@ -76,7 +86,7 @@ export default function RegisterPage() {
                 className="mt-0.5 rounded border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--accent-primary)] focus:ring-[var(--accent-primary)]"
               />
               <span>
-                I confirm I am at least 16 years of age and agree to the{' '}
+                I confirm I am at least 18 years of age and agree to the{' '}
                 <Link href="/terms" className="text-[var(--accent-primary)] hover:underline" target="_blank">
                   Terms
                 </Link>{' '}

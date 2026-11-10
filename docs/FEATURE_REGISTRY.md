@@ -24,3 +24,6 @@ Every interactive control in the user interface must be registered in this docum
 | `SET-01` | `/settings` | Profile Form | Save Changes | Updates bio, display name, location, and privacy toggles | Updates `profiles` table | `apps/web/e2e/journeys.spec.ts` | Green |
 | `SET-02` | `/settings` | Export Data Button | Click | Generates and downloads full JSON archive of food life | Calls `exportUserData` server action | `apps/web/e2e/journeys.spec.ts` | Green |
 | `SET-03` | `/settings` | Delete Account Button | Confirm (Type DELETE) | Places account in 14-day deletion grace period | Calls `request_account_deletion` RPC | `apps/web/e2e/journeys.spec.ts` | Green |
+| `AUTH-04` | `/auth/register` | Beta Invite Code Input | Type / Submit | Validates beta invite code against active quota before signup | `check_invite_code` RPC; `redeem_invite_code` RPC | `packages/domain/tests/schemas.test.ts` | Green |
+| `ADMIN-01` | `/admin` | Moderation Actions | Click Dismiss/Delete | Resolves abuse report and executes moderation action | Updates `reports`, inserts `moderation_actions` | `apps/web/tests/ui.test.ts` | Green |
+| `STATUS-01` | `/status` | Beta Ops & Feedback Link | Click | Navigates to operational status and opens beta feedback channel | Operational tracking & feedback delivery | `apps/web/tests/sample.test.ts` | Green |

@@ -734,7 +734,58 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: {
+      invite_codes: {
+        Row: {
+          id: string;
+          code: string;
+          created_by: string | null;
+          max_uses: number;
+          uses_count: number;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          created_by?: string | null;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          created_by?: string | null;
+          max_uses?: number;
+          uses_count?: number;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      invite_redemptions: {
+        Row: {
+          id: string;
+          invite_code_id: string;
+          user_id: string;
+          redeemed_at: string;
+        };
+        Insert: {
+          id?: string;
+          invite_code_id: string;
+          user_id: string;
+          redeemed_at?: string;
+        };
+        Update: {
+          id?: string;
+          invite_code_id?: string;
+          user_id?: string;
+          redeemed_at?: string;
+        };
+        Relationships: [];
+      };
+        Views: {
       dish_public_stats: {
         Row: {
           dish_id: string;
@@ -981,6 +1032,19 @@ export type Database = {
           bestDish: { name: string | null; rating: number | null };
           topDishes: Array<{ name: string; count: number }>;
         };
+      };
+      check_invite_code: {
+        Args: {
+          p_code: string;
+        };
+        Returns: boolean;
+      };
+      redeem_invite_code: {
+        Args: {
+          p_code: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
     };
     Enums: {

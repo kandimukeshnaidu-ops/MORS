@@ -85,10 +85,18 @@ export const CollectionInputSchema = z.object({
   system_key: z.string().max(50).nullable().optional(),
 });
 
+export const InviteCodeSchema = z
+  .string()
+  .trim()
+  .min(4, 'Invite code must be at least 4 characters')
+  .max(32, 'Invite code cannot exceed 32 characters')
+  .regex(/^[A-Za-z0-9\-_]+$/, 'Invite code contains invalid characters');
+
 export type UsernameInput = z.infer<typeof UsernameSchema>;
 export type ProfileUpdateInput = z.infer<typeof ProfileUpdateSchema>;
 export type ExperienceDishInput = z.infer<typeof ExperienceDishInputSchema>;
 export type ExperiencePhotoInput = z.infer<typeof ExperiencePhotoInputSchema>;
 export type CreateExperienceInput = z.infer<typeof CreateExperienceInputSchema>;
 export type CollectionInput = z.infer<typeof CollectionInputSchema>;
+export type InviteCodeInput = z.infer<typeof InviteCodeSchema>;
 

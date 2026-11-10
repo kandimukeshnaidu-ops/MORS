@@ -95,10 +95,10 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
             🔍
           </Link>
           <Link
-            href="/dev/ui"
+            href="/status"
             className="text-xs font-mono text-[var(--accent-primary)] border border-[var(--border-subtle)] px-2 py-1 rounded"
           >
-            /dev/ui
+            Beta Ops
           </Link>
         </div>
       </header>
@@ -153,15 +153,21 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
           </div>
 
           {/* Footer Metadata */}
-          <div className="pt-4 border-t border-[var(--border-subtle)]">
+          <div className="pt-4 border-t border-[var(--border-subtle)] space-y-1.5">
             <Link
-              href="/dev/ui"
+              href="/status"
               className="block text-xs font-mono text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
             >
-              Component Gallery (/dev/ui)
+              Beta Status & Feedback
+            </Link>
+            <Link
+              href="/community-guidelines"
+              className="block text-xs font-mono text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+            >
+              Community Guidelines
             </Link>
             <div className="mt-2 text-[11px] text-[var(--text-muted)]">
-              Your food. Your memories.
+              MORS Hyderabad Beta · 2026
             </div>
           </div>
         </aside>

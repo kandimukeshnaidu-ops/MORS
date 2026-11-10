@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { UsernameSchema, CreateExperienceInputSchema } from '../src/schemas';
+import { UsernameSchema, CreateExperienceInputSchema, InviteCodeSchema } from '../src/schemas';
 
 describe('Domain Schemas', () => {
   it('validates compliant usernames', () => {
@@ -15,6 +15,14 @@ describe('Domain Schemas', () => {
     expect(UsernameSchema.safeParse('user@email').success).toBe(false);
     expect(UsernameSchema.safeParse('admin').success).toBe(false); // reserved
     expect(UsernameSchema.safeParse('settings').success).toBe(false); // reserved
+  });
+
+  it('validates invite codes', () => {
+    expect(InviteCodeSchema.safeParse('HYDERABAD-BETA-2026').success).toBe(true);
+    expect(InviteCodeSchema.safeParse('MORS_2026').success).toBe(true);
+    expect(InviteCodeSchema.safeParse('ab').success).toBe(false); // too short
+    expect(InviteCodeSchema.safeParse('code with spaces').success).toBe(false);
+    expect(InviteCodeSchema.safeParse('code$special!').success).toBe(false);
   });
 
   it('validates food experience payload', () => {
