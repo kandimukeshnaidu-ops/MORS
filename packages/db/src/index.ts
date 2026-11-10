@@ -1207,6 +1207,27 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_map_pins: {
+        Args: {
+          p_min_lat?: number | null;
+          p_max_lat?: number | null;
+          p_min_lng?: number | null;
+          p_max_lng?: number | null;
+          p_city?: string | null;
+        };
+        Returns: Array<{
+          id: string;
+          name: string;
+          lat: number | null;
+          lng: number | null;
+          city: string | null;
+          address: string | null;
+          source_attribution: string | null;
+          is_visited_by_viewer: boolean;
+          public_experience_count: number;
+          public_rating_avg: number | null;
+        }>;
+      };
     };
     Enums: {
       visibility_t: Visibility;

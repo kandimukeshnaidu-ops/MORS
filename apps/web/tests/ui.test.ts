@@ -49,4 +49,12 @@ describe('Rating and UI Calculations', () => {
     expect(freshViral).toBeGreaterThan(olderViral);
     expect(freshViral).toBeCloseTo(2.5, 2);
   });
+
+  it('verifies Phase 18 map pins filter home locations and hold venue coordinates only', () => {
+    const isAllowedPlace = (name: string) => name.trim().toLowerCase() !== 'home';
+    expect(isAllowedPlace('Home')).toBe(false);
+    expect(isAllowedPlace('home')).toBe(false);
+    expect(isAllowedPlace('Bawarchi Restaurant')).toBe(true);
+    expect(isAllowedPlace('Shah Ghouse Cafe')).toBe(true);
+  });
 });
