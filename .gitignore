@@ -33,3 +33,4 @@ vibe-janitor-report/
 # OS files
 .DS_Store
 Thumbs.db
+*.tsbuildinfo
