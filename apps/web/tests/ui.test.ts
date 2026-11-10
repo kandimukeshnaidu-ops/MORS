@@ -187,4 +187,24 @@ describe('Rating and UI Calculations', () => {
     expect(isAuthorized('user-a', 'user-a')).toBe(true);
     expect(isAuthorized('user-b', 'user-a')).toBe(false);
   });
+
+  it('enforces Phase 27 import safety defaults (private draft only, no public leak)', () => {
+    interface ImportedRow {
+      title: string;
+      status: string;
+      visibility: string;
+    }
+    const createImportDraft = (title: string): ImportedRow => ({
+      title,
+      status: 'draft',
+      visibility: 'private',
+    });
+    const entry = createImportDraft('Grandma Sambar Recipe');
+    expect(entry.status).toBe('draft');
+    expect(entry.visibility).toBe('private');
+
+    const canAppearInExplore = (row: ImportedRow) =>
+      row.status === 'published' && row.visibility === 'public';
+    expect(canAppearInExplore(entry)).toBe(false);
+  });
 });

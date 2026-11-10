@@ -1204,6 +1204,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      import_batches: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: 'pending' | 'processing' | 'completed' | 'failed';
+          total_rows: number;
+          imported_rows: number;
+          errors: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status?: 'pending' | 'processing' | 'completed' | 'failed';
+          total_rows?: number;
+          imported_rows?: number;
+          errors?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          status?: 'pending' | 'processing' | 'completed' | 'failed';
+          total_rows?: number;
+          imported_rows?: number;
+          errors?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1625,6 +1655,16 @@ export type Database = {
             saves: number;
           }>;
         } | null;
+      };
+      import_food_entries: {
+        Args: {
+          p_batch_id: string;
+          p_entries: Json;
+        };
+        Returns: {
+          batch_id: string;
+          imported_count: number;
+        };
       };
     };
     Enums: {
