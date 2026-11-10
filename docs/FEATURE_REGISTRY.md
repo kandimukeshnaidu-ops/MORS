@@ -27,3 +27,6 @@ Every interactive control in the user interface must be registered in this docum
 | `AUTH-04` | `/auth/register` | Beta Invite Code Input | Type / Submit | Validates beta invite code against active quota before signup | `check_invite_code` RPC; `redeem_invite_code` RPC | `packages/domain/tests/schemas.test.ts` | Green |
 | `ADMIN-01` | `/admin` | Moderation Actions | Click Dismiss/Delete | Resolves abuse report and executes moderation action | Updates `reports`, inserts `moderation_actions` | `apps/web/tests/ui.test.ts` | Green |
 | `STATUS-01` | `/status` | Beta Ops & Feedback Link | Click | Navigates to operational status and opens beta feedback channel | Operational tracking & feedback delivery | `apps/web/tests/sample.test.ts` | Green |
+| `LOG-07` | `/e/[id]` | Log Again Button | Click | Duplicates past meal metadata into a new draft | In-memory modal opened; sets start timestamp | `apps/web/tests/ui.test.ts` | Green |
+| `LOG-08` | `LogModal` | Restore / Discard Local Draft | Click | Restores or discards unsaved draft from local storage | LocalStorage read/delete | `apps/web/tests/ui.test.ts` | Green |
+| `ENG-01` | `/e/[id]` | Share Experience Button | Click / Tap | Invokes native share sheet or copies experience URL to clipboard | Clipboard API / navigator.share | `apps/web/tests/ui.test.ts` | Green |

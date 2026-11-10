@@ -71,6 +71,71 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   const [isDetailedOpen, setIsDetailedOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+
+  // Check for saved local draft on open
+  useEffect(() => {
+    if (isOpen && !initialData) {
+      try {
+        const raw = localStorage.getItem('mors_draft_experience');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.title || parsed.description || parsed.dishes?.[0]?.name)) {
+            setHasSavedDraft(true);
+          }
+        }
+      } catch {}
+    }
+  }, [isOpen, initialData]);
+
+  // Debounced autosave to localStorage
+  useEffect(() => {
+    if (!isOpen || initialData) return;
+    const timeout = setTimeout(() => {
+      try {
+        const hasContent = title.trim() || description.trim() || dishes.some((d) => d.name.trim());
+        if (hasContent) {
+          const draft = {
+            title,
+            categorySlug,
+            description,
+            cuisine,
+            priceAmount,
+            tagsInput,
+            visibility,
+            dishes,
+          };
+          localStorage.setItem('mors_draft_experience', JSON.stringify(draft));
+        }
+      } catch {}
+    }, 1000);
+    return () => clearTimeout(timeout);
+  }, [isOpen, initialData, title, categorySlug, description, cuisine, priceAmount, tagsInput, visibility, dishes]);
+
+  const restoreDraft = () => {
+    try {
+      const raw = localStorage.getItem('mors_draft_experience');
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.title) setTitle(d.title);
+        if (d.categorySlug) setCategorySlug(d.categorySlug);
+        if (d.description) setDescription(d.description);
+        if (d.cuisine) setCuisine(d.cuisine);
+        if (d.priceAmount) setPriceAmount(d.priceAmount);
+        if (d.tagsInput) setTagsInput(d.tagsInput);
+        if (d.visibility) setVisibility(d.visibility);
+        if (d.dishes && d.dishes.length > 0) setDishes(d.dishes);
+        setHasSavedDraft(false);
+      }
+    } catch {}
+  };
+
+  const discardDraft = () => {
+    try {
+      localStorage.removeItem('mors_draft_experience');
+    } catch {}
+    setHasSavedDraft(false);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -277,6 +342,9 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
     }
 
     // Success: track telemetry duration & close modal
+    try {
+      localStorage.removeItem('mors_draft_experience');
+    } catch {}
     const durationSec = Math.round((Date.now() - startTimeRef.current) / 1000);
     console.info(`[Telemetry] log_${status}`, {
       durationSec,
@@ -299,6 +367,30 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
         {errorMessage && (
           <div className="rounded-xl border border-[var(--semantic-error)]/30 bg-[var(--semantic-error)]/10 p-3.5 text-xs text-[var(--semantic-error)]">
             {errorMessage}
+          </div>
+        )}
+
+        {hasSavedDraft && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 p-3 text-xs">
+            <span className="text-[var(--text-primary)]">
+              Found an unsaved draft from a previous session.
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={restoreDraft}
+                className="px-2.5 py-1 rounded bg-[var(--accent-primary)] text-[var(--bg-primary)] font-semibold text-[11px] hover:bg-[var(--accent-hover)] transition-colors"
+              >
+                Restore
+              </button>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="px-2 py-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-[11px]"
+              >
+                Discard
+              </button>
+            </div>
           </div>
         )}
 

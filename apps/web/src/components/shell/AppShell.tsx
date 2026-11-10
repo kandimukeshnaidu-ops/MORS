@@ -161,6 +161,12 @@ export function AppShell({ children, onOpenLog }: AppShellProps) {
               Beta Status & Feedback
             </Link>
             <Link
+              href="/changelog"
+              className="block text-xs font-mono text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
+            >
+              Changelog & Releases
+            </Link>
+            <Link
               href="/community-guidelines"
               className="block text-xs font-mono text-[var(--text-muted)] hover:text-[var(--accent-primary)] transition-colors"
             >

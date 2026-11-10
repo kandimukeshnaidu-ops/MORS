@@ -19,6 +19,8 @@ export function ExperienceActions({ experienceId, initialData }: ExperienceActio
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [isLogAgainOpen, setIsLogAgainOpen] = useState(false);
+
   const handleDelete = async () => {
     setIsDeleting(true);
     setError(null);
@@ -64,6 +66,14 @@ export function ExperienceActions({ experienceId, initialData }: ExperienceActio
         ) : (
           <>
             <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsLogAgainOpen(true)}
+              className="text-[var(--accent-primary)] border-[var(--accent-primary)]/40 hover:bg-[var(--accent-primary)]/10"
+            >
+              Log Again
+            </Button>
+            <Button
               variant="secondary"
               size="sm"
               onClick={() => setIsEditOpen(true)}
@@ -87,6 +97,32 @@ export function ExperienceActions({ experienceId, initialData }: ExperienceActio
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           initialData={initialData}
+        />
+      )}
+
+      {isLogAgainOpen && (
+        <LogModal
+          isOpen={isLogAgainOpen}
+          onClose={() => setIsLogAgainOpen(false)}
+          initialData={{
+            category_slug: initialData.category_slug,
+            place_id: initialData.place_id,
+            cuisine: initialData.cuisine,
+            price_amount: initialData.price_amount,
+            price_currency: initialData.price_currency || 'INR',
+            tags: initialData.tags || [],
+            dishes: (initialData.dishes || []).map((d) => ({
+              dish_id: d.dish_id,
+              display_name: d.display_name,
+              position: d.position,
+              rating: null,
+              note: null,
+            })),
+            photos: [],
+            description: null,
+            overall_rating: null,
+            status: 'draft',
+          }}
         />
       )}
     </>

@@ -10,6 +10,7 @@ import { ExperienceActions } from '@/components/log/ExperienceActions';
 import { LikeButton } from '@/components/engagement/LikeButton';
 import { CommentsSection } from '@/components/engagement/CommentsSection';
 import { SaveToCollectionButton } from '@/components/collections/SaveToCollectionButton';
+import { ShareButton } from '@/components/ui/ShareButton';
 import { getLikeStatus } from '@/app/engagement/actions';
 import type { Metadata } from 'next';
 
@@ -191,6 +192,8 @@ export default async function ExperienceDetailPage({ params }: ExperienceDetailP
             </div>
 
             <div className="ml-auto flex items-center gap-3">
+              <ShareButton title={exp.title || 'Food Experience'} />
+
               <SaveToCollectionButton
                 itemType="experience"
                 targetId={id}
