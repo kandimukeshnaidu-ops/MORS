@@ -5,6 +5,17 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { UsernameSchema, ProfileUpdateSchema, InviteCodeSchema } from '@mors/domain';
 
+function isConnectionError(err: any): boolean {
+  if (!err) return false;
+  const msg = typeof err === 'string' ? err : err.message || err.details || '';
+  return (
+    msg.includes('fetch failed') ||
+    msg.includes('ECONNREFUSED') ||
+    msg.includes('Failed to fetch') ||
+    msg.includes('connect ECONNREFUSED')
+  );
+}
+
 export async function login(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -21,6 +32,11 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
+    if (isConnectionError(error)) {
+      return {
+        error: `Database unreachable (${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'} is offline). Please start your Supabase instance or update apps/web/.env.local.`,
+      };
+    }
     return { error: error.message };
   }
 
@@ -58,7 +74,16 @@ export async function signup(formData: FormData) {
     p_code: inviteCode,
   });
 
-  if (codeErr || !isValid) {
+  if (codeErr) {
+    if (isConnectionError(codeErr)) {
+      return {
+        error: `Database unreachable (${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'} is offline). Please start your Supabase instance or update apps/web/.env.local.`,
+      };
+    }
+    return { error: `Failed to verify invite code: ${codeErr.message}` };
+  }
+
+  if (!isValid) {
     return { error: 'Invalid or expired beta invite code. MORS is currently in closed beta.' };
   }
 
@@ -74,6 +99,11 @@ export async function signup(formData: FormData) {
   });
 
   if (error) {
+    if (isConnectionError(error)) {
+      return {
+        error: `Database unreachable (${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'} is offline). Please start your Supabase instance or update apps/web/.env.local.`,
+      };
+    }
     return { error: error.message };
   }
 
@@ -102,6 +132,11 @@ export async function resetPassword(formData: FormData) {
   });
 
   if (error) {
+    if (isConnectionError(error)) {
+      return {
+        error: `Database unreachable (${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'} is offline). Please start your Supabase instance or update apps/web/.env.local.`,
+      };
+    }
     return { error: error.message };
   }
 
@@ -212,6 +247,11 @@ export async function updateProfile(formData: FormData) {
     .eq('id', user.id);
 
   if (error) {
+    if (isConnectionError(error)) {
+      return {
+        error: `Database unreachable (${process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'} is offline). Please start your Supabase instance or update apps/web/.env.local.`,
+      };
+    }
     return { error: error.message };
   }
 
