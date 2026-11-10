@@ -901,6 +901,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      recaps: {
+        Row: {
+          id: string;
+          user_id: string;
+          year: number;
+          data: Json;
+          generated_at: string;
+          share_token: string | null;
+          share_enabled: boolean;
+          include_private: boolean;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          year: number;
+          data?: Json;
+          generated_at?: string;
+          share_token?: string | null;
+          share_enabled?: boolean;
+          include_private?: boolean;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          year?: number;
+          data?: Json;
+          generated_at?: string;
+          share_token?: string | null;
+          share_enabled?: boolean;
+          include_private?: boolean;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1242,6 +1275,20 @@ export type Database = {
           sample_message: string;
           is_read: boolean;
         }>;
+      };
+      get_recap_by_token: {
+        Args: {
+          p_token: string;
+        };
+        Returns: Json | null;
+      };
+      toggle_recap_sharing: {
+        Args: {
+          p_year: number;
+          p_share_enabled: boolean;
+          p_include_private?: boolean;
+        };
+        Returns: string;
       };
     };
     Enums: {

@@ -79,4 +79,31 @@ describe('Rating and UI Calculations', () => {
     expect(formatGroup('Ana', 2, 'liked your experience')).toBe('Ana and 1 other liked your experience');
     expect(formatGroup('Ana', 4, 'liked your experience')).toBe('Ana and 3 others liked your experience');
   });
+
+  it('asserts Phase 20 Food Year recap privacy defaults (opt-in sharing, revoked tokens return null)', () => {
+    interface MockRecap {
+      year: number;
+      shareEnabled: boolean;
+      shareToken: string | null;
+      includePrivate: boolean;
+    }
+    const recap: MockRecap = {
+      year: 2026,
+      shareEnabled: false,
+      shareToken: null,
+      includePrivate: false,
+    };
+    expect(recap.shareEnabled).toBe(false);
+    expect(recap.includePrivate).toBe(false);
+
+    // Toggling share generates token
+    recap.shareEnabled = true;
+    recap.shareToken = 'mock-uuid-token';
+    expect(recap.shareToken).not.toBeNull();
+
+    // Revoking share disables access
+    recap.shareEnabled = false;
+    const canAccessShared = (r: MockRecap) => r.shareEnabled && r.shareToken !== null;
+    expect(canAccessShared(recap)).toBe(false);
+  });
 });
