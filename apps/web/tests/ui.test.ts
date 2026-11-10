@@ -207,4 +207,17 @@ describe('Rating and UI Calculations', () => {
       row.status === 'published' && row.visibility === 'public';
     expect(canAppearInExplore(entry)).toBe(false);
   });
+
+  it('enforces Phase 28 smart logging consent gate and daily quota constraints', () => {
+    interface AIAssistUser {
+      enabled: boolean;
+      dailyQuotaUsed: number;
+      maxDailyQuota: number;
+    }
+    const canUseAssist = (u: AIAssistUser) => u.enabled && u.dailyQuotaUsed < u.maxDailyQuota;
+
+    expect(canUseAssist({ enabled: false, dailyQuotaUsed: 0, maxDailyQuota: 20 })).toBe(false);
+    expect(canUseAssist({ enabled: true, dailyQuotaUsed: 20, maxDailyQuota: 20 })).toBe(false);
+    expect(canUseAssist({ enabled: true, dailyQuotaUsed: 5, maxDailyQuota: 20 })).toBe(true);
+  });
 });

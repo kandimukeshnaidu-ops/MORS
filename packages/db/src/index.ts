@@ -1234,6 +1234,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_assist_preferences: {
+        Row: {
+          user_id: string;
+          enabled: boolean;
+          daily_quota_used: number;
+          max_daily_quota: number;
+          last_reset_at: string;
+        };
+        Insert: {
+          user_id: string;
+          enabled?: boolean;
+          daily_quota_used?: number;
+          max_daily_quota?: number;
+          last_reset_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          enabled?: boolean;
+          daily_quota_used?: number;
+          max_daily_quota?: number;
+          last_reset_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1665,6 +1689,16 @@ export type Database = {
           batch_id: string;
           imported_count: number;
         };
+      };
+      get_ai_assist_dishes: {
+        Args: {
+          p_cuisine?: string | null;
+          p_hint?: string | null;
+        };
+        Returns: Array<{
+          dish_name: string;
+          source: string;
+        }>;
       };
     };
     Enums: {
