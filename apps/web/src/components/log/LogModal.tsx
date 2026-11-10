@@ -42,6 +42,7 @@ export interface LogModalProps {
 export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   const router = useRouter();
   const startTimeRef = useRef<number>(Date.now());
+  const clientRequestIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Experience State
@@ -74,6 +75,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   useEffect(() => {
     if (isOpen) {
       startTimeRef.current = Date.now();
+      clientRequestIdRef.current = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now();
       getCategories().then((cats) => {
         if (cats && cats.length > 0) setCategories(cats);
       });
@@ -249,6 +251,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
       : [];
 
     const payload: CreateExperienceInput = {
+      client_request_id: clientRequestIdRef.current,
       title: title.trim() || null,
       category_slug: categorySlug,
       eaten_at: eatenAt ? new Date(eatenAt).toISOString() : new Date().toISOString(),

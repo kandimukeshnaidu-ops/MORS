@@ -28,6 +28,7 @@ export const ProfileUpdateSchema = z.object({
   is_private: z.boolean().optional(),
   default_visibility: z.enum(VISIBILITIES).optional(),
   discoverable: z.boolean().optional(),
+  timezone: z.string().max(60).optional(),
 });
 
 export const ExperienceDishInputSchema = z.object({
@@ -54,6 +55,7 @@ export const ExperiencePhotoInputSchema = z.object({
 });
 
 export const CreateExperienceInputSchema = z.object({
+  client_request_id: z.string().uuid().optional(),
   title: z.string().max(120).nullable().optional(),
   category_slug: z.string().min(1),
   eaten_at: z.string().datetime().optional(),
@@ -80,6 +82,7 @@ export const CollectionInputSchema = z.object({
   name: z.string().min(1, 'Collection name is required').max(100),
   description: z.string().max(500).nullable().optional(),
   visibility: z.enum(COLLECTION_VISIBILITIES).default('private'),
+  system_key: z.string().max(50).nullable().optional(),
 });
 
 export type UsernameInput = z.infer<typeof UsernameSchema>;

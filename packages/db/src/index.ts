@@ -47,6 +47,7 @@ export type Database = {
           following_count: number;
           experiences_count: number;
           role: 'user' | 'moderator' | 'admin';
+          timezone: string;
           onboarding_completed_at: string | null;
           deletion_requested_at: string | null;
           created_at: string;
@@ -70,6 +71,7 @@ export type Database = {
           following_count?: number;
           experiences_count?: number;
           role?: 'user' | 'moderator' | 'admin';
+          timezone?: string;
           onboarding_completed_at?: string | null;
           deletion_requested_at?: string | null;
           created_at?: string;
@@ -93,6 +95,7 @@ export type Database = {
           following_count?: number;
           experiences_count?: number;
           role?: 'user' | 'moderator' | 'admin';
+          timezone?: string;
           onboarding_completed_at?: string | null;
           deletion_requested_at?: string | null;
           created_at?: string;
@@ -175,6 +178,7 @@ export type Database = {
           external_source: string | null;
           external_id: string | null;
           created_by: string | null;
+          is_listed: boolean;
           merged_into_id: string | null;
           created_at: string;
         };
@@ -192,6 +196,7 @@ export type Database = {
           external_source?: string | null;
           external_id?: string | null;
           created_by?: string | null;
+          is_listed?: boolean;
           merged_into_id?: string | null;
           created_at?: string;
         };
@@ -209,6 +214,7 @@ export type Database = {
           external_source?: string | null;
           external_id?: string | null;
           created_by?: string | null;
+          is_listed?: boolean;
           merged_into_id?: string | null;
           created_at?: string;
         };
@@ -223,6 +229,7 @@ export type Database = {
           cuisine: string | null;
           description: string | null;
           created_by: string | null;
+          is_listed: boolean;
           merged_into_id: string | null;
           created_at: string;
         };
@@ -234,6 +241,7 @@ export type Database = {
           cuisine?: string | null;
           description?: string | null;
           created_by?: string | null;
+          is_listed?: boolean;
           merged_into_id?: string | null;
           created_at?: string;
         };
@@ -245,6 +253,7 @@ export type Database = {
           cuisine?: string | null;
           description?: string | null;
           created_by?: string | null;
+          is_listed?: boolean;
           merged_into_id?: string | null;
           created_at?: string;
         };
@@ -278,6 +287,8 @@ export type Database = {
           title: string | null;
           category_slug: string;
           eaten_at: string;
+          eaten_date: string;
+          client_request_id: string | null;
           published_at: string | null;
           status: ExperienceStatus;
           visibility: Visibility;
@@ -297,6 +308,8 @@ export type Database = {
           title?: string | null;
           category_slug: string;
           eaten_at?: string;
+          eaten_date?: string;
+          client_request_id?: string | null;
           published_at?: string | null;
           status?: ExperienceStatus;
           visibility?: Visibility;
@@ -316,6 +329,8 @@ export type Database = {
           title?: string | null;
           category_slug?: string;
           eaten_at?: string;
+          eaten_date?: string;
+          client_request_id?: string | null;
           published_at?: string | null;
           status?: ExperienceStatus;
           visibility?: Visibility;
@@ -515,6 +530,7 @@ export type Database = {
           visibility: CollectionVisibility;
           share_token: string;
           is_wishlist: boolean;
+          system_key: string | null;
           items_count: number;
           likes_count: number;
           created_at: string;
@@ -529,6 +545,7 @@ export type Database = {
           visibility?: CollectionVisibility;
           share_token?: string;
           is_wishlist?: boolean;
+          system_key?: string | null;
           items_count?: number;
           likes_count?: number;
           created_at?: string;
@@ -543,6 +560,7 @@ export type Database = {
           visibility?: CollectionVisibility;
           share_token?: string;
           is_wishlist?: boolean;
+          system_key?: string | null;
           items_count?: number;
           likes_count?: number;
           created_at?: string;
@@ -652,6 +670,66 @@ export type Database = {
           platform?: 'ios' | 'android' | 'web';
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      storage_cleanup_queue: {
+        Row: {
+          id: string;
+          bucket_id: string;
+          storage_path: string;
+          queued_at: string;
+          processed_at: string | null;
+          error_message: string | null;
+        };
+        Insert: {
+          id?: string;
+          bucket_id: string;
+          storage_path: string;
+          queued_at?: string;
+          processed_at?: string | null;
+          error_message?: string | null;
+        };
+        Update: {
+          id?: string;
+          bucket_id?: string;
+          storage_path?: string;
+          queued_at?: string;
+          processed_at?: string | null;
+          error_message?: string | null;
+        };
+        Relationships: [];
+      };
+      moderation_actions: {
+        Row: {
+          id: string;
+          moderator_id: string;
+          report_id: string | null;
+          target_type: ReportTarget;
+          target_id: string;
+          action: 'dismiss' | 'delete_content' | 'warn_user' | 'suspend_user';
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          moderator_id: string;
+          report_id?: string | null;
+          target_type: ReportTarget;
+          target_id: string;
+          action: 'dismiss' | 'delete_content' | 'warn_user' | 'suspend_user';
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          moderator_id?: string;
+          report_id?: string | null;
+          target_type?: ReportTarget;
+          target_id?: string;
+          action?: 'dismiss' | 'delete_content' | 'warn_user' | 'suspend_user';
+          notes?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -849,6 +927,12 @@ export type Database = {
         Args: {
           p_token: string;
           p_platform: string;
+        };
+        Returns: boolean;
+      };
+      delete_experience: {
+        Args: {
+          p_id: string;
         };
         Returns: boolean;
       };

@@ -26,19 +26,28 @@ export interface FoodCategoryItem {
 
 /**
  * Searches canonical dishes and aliases by keyword.
+ * Enforces Non-Negotiable #11: Returns listed dishes OR user's own unlisted dishes.
  */
 export async function searchDishes(query: string): Promise<SearchDishItem[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const pattern = `%${trimmed}%`;
 
-  const { data, error } = await supabase
+  let queryBuilder = supabase
     .from('dishes')
     .select('id, name, cuisine')
-    .or(`name.ilike.${pattern},normalized_name.ilike.${pattern}`)
-    .limit(10);
+    .or(`name.ilike.${pattern},normalized_name.ilike.${pattern}`);
+
+  if (user) {
+    queryBuilder = queryBuilder.or(`is_listed.eq.true,created_by.eq.${user.id}`);
+  } else {
+    queryBuilder = queryBuilder.eq('is_listed', true);
+  }
+
+  const { data, error } = await queryBuilder.limit(10);
 
   if (error) {
     console.error('searchDishes error:', error);
@@ -53,7 +62,8 @@ export async function searchDishes(query: string): Promise<SearchDishItem[]> {
 }
 
 /**
- * Creates a new canonical dish record.
+ * Creates a new dish record.
+ * Starts unlisted (is_listed = false) per Non-Negotiable #11.
  */
 export async function createDish(name: string, cuisine?: string): Promise<{ id: string; name: string } | { error: string }> {
   const trimmed = name.trim();
@@ -76,6 +86,7 @@ export async function createDish(name: string, cuisine?: string): Promise<{ id: 
       slug,
       cuisine: cuisine?.trim() || null,
       created_by: user.id,
+      is_listed: false,
     })
     .select('id, name')
     .single();
@@ -89,19 +100,28 @@ export async function createDish(name: string, cuisine?: string): Promise<{ id: 
 
 /**
  * Searches places by name or city.
+ * Enforces Non-Negotiable #11: Returns listed places OR user's own unlisted places.
  */
 export async function searchPlaces(query: string): Promise<SearchPlaceItem[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const pattern = `%${trimmed}%`;
 
-  const { data, error } = await supabase
+  let queryBuilder = supabase
     .from('places')
     .select('id, name, city, address')
-    .or(`name.ilike.${pattern},city.ilike.${pattern}`)
-    .limit(10);
+    .or(`name.ilike.${pattern},city.ilike.${pattern}`);
+
+  if (user) {
+    queryBuilder = queryBuilder.or(`is_listed.eq.true,created_by.eq.${user.id}`);
+  } else {
+    queryBuilder = queryBuilder.eq('is_listed', true);
+  }
+
+  const { data, error } = await queryBuilder.limit(10);
 
   if (error) {
     console.error('searchPlaces error:', error);
@@ -118,6 +138,7 @@ export async function searchPlaces(query: string): Promise<SearchPlaceItem[]> {
 
 /**
  * Creates a new place record.
+ * Starts unlisted (is_listed = false) per Non-Negotiable #11.
  */
 export async function createPlace(name: string, city?: string): Promise<{ id: string; name: string; city: string | null } | { error: string }> {
   const trimmed = name.trim();
@@ -139,6 +160,7 @@ export async function createPlace(name: string, city?: string): Promise<{ id: st
       city: city?.trim() || 'Hyderabad',
       country: 'India',
       created_by: user.id,
+      is_listed: false,
     })
     .select('id, name, city')
     .single();
@@ -232,7 +254,7 @@ export async function saveExperience(
 }
 
 /**
- * Deletes a Food Experience and cleans up its storage photos.
+ * Deletes a Food Experience via transactional delete_experience RPC and cleans up storage.
  */
 export async function deleteExperience(experienceId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -241,7 +263,7 @@ export async function deleteExperience(experienceId: string): Promise<{ success:
     return { success: false, error: 'Authentication required' };
   }
 
-  // 1. Fetch photo storage paths to delete from Supabase storage bucket
+  // 1. Fetch photo storage paths to delete from storage bucket directly
   const { data: photos } = await supabase
     .from('experience_photos')
     .select('storage_path')
@@ -252,18 +274,17 @@ export async function deleteExperience(experienceId: string): Promise<{ success:
     await supabase.storage.from('experience-photos').remove(paths);
   }
 
-  // 2. Delete the experience record (cascades to dishes and photos rows)
-  const { error: deleteError } = await supabase
-    .from('food_experiences')
-    .delete()
-    .eq('id', experienceId)
-    .eq('user_id', user.id);
+  // 2. Call delete_experience RPC (enqueues storage_cleanup_queue and cascades deletion)
+  const { data: success, error: deleteError } = await supabase.rpc('delete_experience', {
+    p_id: experienceId,
+  });
 
-  if (deleteError) {
-    return { success: false, error: deleteError.message };
+  if (deleteError || !success) {
+    return { success: false, error: deleteError?.message || 'Failed to delete experience' };
   }
 
   revalidatePath('/');
+  revalidatePath('/diary');
   return { success: true };
 }
 
