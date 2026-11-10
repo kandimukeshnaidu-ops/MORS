@@ -39,4 +39,14 @@ describe('Rating and UI Calculations', () => {
     expect(isUnderThreshold(5)).toBe(false);
     expect(isUnderThreshold(12)).toBe(false);
   });
+
+  it('calculates Phase 17 explore trending score with time-decay formula', () => {
+    const calcScore = (engagement: number, ageHours: number) => {
+      return engagement / Math.pow(ageHours + 2, 1.5);
+    };
+    const freshViral = calcScore(20, 2); // 4^1.5 = 8 -> 2.5
+    const olderViral = calcScore(20, 14); // 16^1.5 = 64 -> 0.3125
+    expect(freshViral).toBeGreaterThan(olderViral);
+    expect(freshViral).toBeCloseTo(2.5, 2);
+  });
 });

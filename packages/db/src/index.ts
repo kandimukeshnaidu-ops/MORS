@@ -874,6 +874,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      explore_cache: {
+        Row: {
+          id: string;
+          scope: 'city' | 'global';
+          city: string;
+          kind: 'trending' | 'popular_dishes' | 'places' | 'creators';
+          payload: Json;
+          computed_at: string;
+        };
+        Insert: {
+          id?: string;
+          scope: 'city' | 'global';
+          city?: string;
+          kind: 'trending' | 'popular_dishes' | 'places' | 'creators';
+          payload?: Json;
+          computed_at?: string;
+        };
+        Update: {
+          id?: string;
+          scope?: 'city' | 'global';
+          city?: string;
+          kind?: 'trending' | 'popular_dishes' | 'places' | 'creators';
+          payload?: Json;
+          computed_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       dish_public_stats: {
@@ -1172,6 +1199,13 @@ export type Database = {
           p_user_id: string;
         };
         Returns: void;
+      };
+      get_explore_cached: {
+        Args: {
+          p_city?: string;
+          p_kind?: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {
