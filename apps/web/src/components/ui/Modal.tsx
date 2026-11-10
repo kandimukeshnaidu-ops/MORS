@@ -58,7 +58,7 @@ export function Modal({
     >
       <div
         ref={modalRef}
-        className={`w-full ${maxWidthClasses[maxWidth]} rounded-t-2xl sm:rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 shadow-2xl transition-all`}
+        className={`w-full ${maxWidthClasses[maxWidth]} rounded-t-2xl sm:rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-6 shadow-2xl transition-all`}
       >
         <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
           {title ? (
