@@ -1325,6 +1325,90 @@ export type Database = {
         Relationships: [];
       };
     };
+      collection_members: {
+        Row: {
+          collection_id: string;
+          user_id: string;
+          role: 'editor' | 'viewer';
+          status: 'invited' | 'accepted';
+          created_at: string;
+        };
+        Insert: {
+          collection_id: string;
+          user_id: string;
+          role: 'editor' | 'viewer';
+          status: 'invited' | 'accepted';
+          created_at?: string;
+        };
+        Update: {
+          collection_id?: string;
+          user_id?: string;
+          role?: 'editor' | 'viewer';
+          status?: 'invited' | 'accepted';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      plans: {
+        Row: {
+          id: string;
+          collection_id: string;
+          title: string;
+          planned_for: string | null;
+          status: 'planning' | 'decided' | 'completed' | 'cancelled';
+          decided_item_id: string | null;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          collection_id: string;
+          title: string;
+          planned_for?: string | null;
+          status?: 'planning' | 'decided' | 'completed' | 'cancelled';
+          decided_item_id?: string | null;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          collection_id?: string;
+          title?: string;
+          planned_for?: string | null;
+          status?: 'planning' | 'decided' | 'completed' | 'cancelled';
+          decided_item_id?: string | null;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      plan_votes: {
+        Row: {
+          plan_id: string;
+          item_id: string;
+          user_id: string;
+          vote: 'up' | 'down';
+          created_at: string;
+        };
+        Insert: {
+          plan_id: string;
+          item_id: string;
+          user_id: string;
+          vote: 'up' | 'down';
+          created_at?: string;
+        };
+        Update: {
+          plan_id?: string;
+          item_id?: string;
+          user_id?: string;
+          vote?: 'up' | 'down';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     Views: {
       dish_public_stats: {
         Row: {
@@ -1786,6 +1870,20 @@ export type Database = {
         Returns: void;
       };
     };
+      cast_plan_vote: {
+        Args: {
+          p_plan_id: string;
+          p_item_id: string;
+          p_vote: string;
+        };
+        Returns: void;
+      };
+      convert_plan_to_meal_drafts: {
+        Args: {
+          p_plan_id: string;
+        };
+        Returns: number;
+      };
     Enums: {
       visibility_t: Visibility;
       collection_vis_t: CollectionVisibility;

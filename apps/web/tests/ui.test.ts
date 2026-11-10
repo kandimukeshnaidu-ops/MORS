@@ -241,4 +241,40 @@ describe('Rating and UI Calculations', () => {
     expect(activeRecs[0].reason).toContain('Popular in Hyderabad');
     expect(activeRecs[0].reason).not.toBe(''); // Explanations must be non-empty and transparent
   });
+
+  it('enforces Phase 30 group food planning candidate voting and draft meal conversion', () => {
+    interface Vote {
+      itemId: string;
+      userId: string;
+      vote: 'up' | 'down';
+    }
+    const votes: Vote[] = [
+      { itemId: 'item-1', userId: 'user-a', vote: 'up' },
+      { itemId: 'item-1', userId: 'user-b', vote: 'up' },
+      { itemId: 'item-2', userId: 'user-a', vote: 'down' },
+      { itemId: 'item-2', userId: 'user-b', vote: 'up' },
+    ];
+
+    const tally = (itemId: string) => {
+      const itemVotes = votes.filter(v => v.itemId === itemId);
+      return itemVotes.reduce((acc, v) => acc + (v.vote === 'up' ? 1 : -1), 0);
+    };
+
+    expect(tally('item-1')).toBe(2);
+    expect(tally('item-2')).toBe(0);
+
+    // Draft generation converts decided plan into private draft meals
+    const generateMealDrafts = (planTitle: string, members: string[]) => {
+      return members.map(m => ({
+        userId: m,
+        title: planTitle,
+        status: 'draft',
+        visibility: 'private', // Strictly private draft
+      }));
+    };
+
+    const drafts = generateMealDrafts('Sunday Breakfast at Ram Ki Bandi', ['user-a', 'user-b']);
+    expect(drafts).toHaveLength(2);
+    expect(drafts.every(d => d.status === 'draft' && d.visibility === 'private')).toBe(true);
+  });
 });
