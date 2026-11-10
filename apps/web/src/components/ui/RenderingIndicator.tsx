@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { ProgressBar } from './ProgressBar';
 import { Button } from './Button';
 import {

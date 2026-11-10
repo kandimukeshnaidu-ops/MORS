@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 export interface ProgressBarProps {
   /**
    * Progress value between 0 and 100.

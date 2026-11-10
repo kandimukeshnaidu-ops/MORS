@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface SkeletonProps {
   className?: string;
   variant?: 'rect' | 'circle' | 'text';

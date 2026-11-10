@@ -18,7 +18,6 @@ import { RenderingIndicator } from '@/components/ui/RenderingIndicator';
 import { BufferingContainer } from '@/components/ui/BufferingContainer';
 import {
   ExperienceCardSkeleton,
-  CollectionListSkeleton,
 } from '@/components/ui/skeletons/LayoutSkeletons';
 import type { RenderingStage } from '@/hooks/useRenderingLifecycle';
 
