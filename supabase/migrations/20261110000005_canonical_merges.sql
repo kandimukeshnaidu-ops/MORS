@@ -17,7 +17,7 @@ DECLARE
   v_source record;
   v_target record;
   v_user_id uuid;
-  v_user_role public.user_role_t;
+  v_user_role text;
 BEGIN
   v_user_id := (SELECT auth.uid());
   IF v_user_id IS NULL THEN
@@ -82,7 +82,7 @@ DECLARE
   v_source record;
   v_target record;
   v_user_id uuid;
-  v_user_role public.user_role_t;
+  v_user_role text;
 BEGIN
   v_user_id := (SELECT auth.uid());
   IF v_user_id IS NULL THEN

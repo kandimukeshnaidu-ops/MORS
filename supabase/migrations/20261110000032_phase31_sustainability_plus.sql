@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS public.entitlement_grants (
   entitlement_key TEXT NOT NULL CHECK (entitlement_key IN ('storage_boost_10gb', 'printable_recap', 'advanced_analytics', 'custom_theme')),
   granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ,
-  PRIMARY KEY (id),
   UNIQUE (user_id, entitlement_key)
 );
 CREATE INDEX IF NOT EXISTS idx_entitlement_grants_user ON public.entitlement_grants(user_id);

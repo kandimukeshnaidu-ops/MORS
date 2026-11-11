@@ -2,8 +2,8 @@
 -- Migration: 20261110000009_search.sql
 
 -- 1. Trigram and FTS Indexes
-CREATE INDEX IF NOT EXISTS idx_dishes_canonical_name_trgm 
-ON public.dishes USING gin (canonical_name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_dishes_name_trgm 
+ON public.dishes USING gin (name extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_places_name_trgm 
 ON public.places USING gin (name extensions.gin_trgm_ops);
@@ -53,21 +53,21 @@ BEGIN
         SELECT
             'dish'::text AS r_type,
             d.id::text AS r_id,
-            d.canonical_name::text AS r_title,
+            d.name::text AS r_title,
             COALESCE(d.cuisine, 'Dish')::text AS r_subtitle,
-            d.primary_photo_path::text AS r_photo,
+            NULL::text AS r_photo,
             ('/dish/' || d.slug)::text AS r_url,
             GREATEST(
-                extensions.similarity(d.canonical_name, clean_q),
+                extensions.similarity(d.name, clean_q),
                 extensions.similarity(d.normalized_name, lower(clean_q)),
-                CASE WHEN d.canonical_name ILIKE '%' || clean_q || '%' THEN 0.8 ELSE 0.0 END
+                CASE WHEN d.name ILIKE '%' || clean_q || '%' THEN 0.8 ELSE 0.0 END
             )::double precision AS r_score
         FROM public.dishes d
         WHERE (p_types IS NULL OR 'dish' = ANY(p_types))
           AND (
-              d.canonical_name ILIKE '%' || clean_q || '%' OR
+              d.name ILIKE '%' || clean_q || '%' OR
               d.normalized_name % lower(clean_q) OR
-              extensions.similarity(d.canonical_name, clean_q) > 0.25
+              extensions.similarity(d.name, clean_q) > 0.25
           )
 
         UNION ALL

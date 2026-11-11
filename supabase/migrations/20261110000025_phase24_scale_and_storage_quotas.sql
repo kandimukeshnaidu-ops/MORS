@@ -29,10 +29,10 @@ CREATE POLICY storage_quotas_admin ON public.storage_quotas
 -- 2. Covering Indexes for High-Throughput Public Feed and Query Paths
 CREATE INDEX IF NOT EXISTS idx_food_experiences_public_feed
   ON public.food_experiences(status, visibility, eaten_at DESC)
-  INCLUDE (id, user_id, place_id, rating);
+  INCLUDE (id, user_id, place_id, overall_rating);
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
-  ON public.notifications(user_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread
+  ON public.notifications(recipient_id, is_read, created_at DESC);
 
 -- 3. Storage Usage RPC
 CREATE OR REPLACE FUNCTION public.get_user_storage_usage(p_user_id UUID)

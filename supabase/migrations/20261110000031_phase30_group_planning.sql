@@ -18,14 +18,14 @@ CREATE POLICY collection_members_select ON public.collection_members
   FOR SELECT
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
 CREATE POLICY collection_members_insert ON public.collection_members
   FOR INSERT
   WITH CHECK (
-    EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -33,7 +33,7 @@ CREATE POLICY collection_members_update ON public.collection_members
   FOR UPDATE
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -41,7 +41,7 @@ CREATE POLICY collection_members_delete ON public.collection_members
   FOR DELETE
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -64,7 +64,7 @@ CREATE POLICY plans_select ON public.plans
   FOR SELECT
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted')
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
@@ -74,7 +74,7 @@ CREATE POLICY plans_insert ON public.plans
   WITH CHECK (
     created_by = (SELECT auth.uid())
     AND (
-      EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+      EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
       OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted' AND cm.role = 'editor')
       OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
     )
@@ -84,7 +84,7 @@ CREATE POLICY plans_update ON public.plans
   FOR UPDATE
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted' AND cm.role = 'editor')
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
@@ -93,7 +93,7 @@ CREATE POLICY plans_delete ON public.plans
   FOR DELETE
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -117,7 +117,7 @@ CREATE POLICY plan_votes_select ON public.plan_votes
       SELECT 1 FROM public.plans p
       JOIN public.collections c ON c.id = p.collection_id
       WHERE p.id = plan_id
-        AND (c.owner_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
+        AND (c.user_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
     )
     OR EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = (SELECT auth.uid()) AND pr.is_admin = true)
   );
@@ -130,7 +130,7 @@ CREATE POLICY plan_votes_insert ON public.plan_votes
       SELECT 1 FROM public.plans p
       JOIN public.collections c ON c.id = p.collection_id
       WHERE p.id = plan_id
-        AND (c.owner_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
+        AND (c.user_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
     )
   );
 
@@ -180,7 +180,7 @@ BEGIN
 
   SELECT EXISTS (
     SELECT 1 FROM public.collections c
-    WHERE c.id = v_coll_id AND c.owner_id = v_user_id
+    WHERE c.id = v_coll_id AND c.user_id = v_user_id
     UNION ALL
     SELECT 1 FROM public.collection_members cm
     WHERE cm.collection_id = v_coll_id AND cm.user_id = v_user_id AND cm.status = 'accepted'
@@ -217,7 +217,7 @@ BEGIN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
-  SELECT p.*, c.owner_id AS coll_owner_id
+  SELECT p.*, c.user_id AS coll_owner_id
   INTO v_plan
   FROM public.plans p
   JOIN public.collections c ON c.id = p.collection_id

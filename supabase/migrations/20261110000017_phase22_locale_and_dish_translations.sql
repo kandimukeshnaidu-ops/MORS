@@ -52,10 +52,10 @@ DECLARE
     v_haleem_id UUID;
     v_chai_id UUID;
 BEGIN
-    SELECT id INTO v_biryani_id FROM public.dishes WHERE canonical_name ILIKE '%biryani%' LIMIT 1;
-    SELECT id INTO v_pesarattu_id FROM public.dishes WHERE canonical_name ILIKE '%pesarattu%' LIMIT 1;
-    SELECT id INTO v_haleem_id FROM public.dishes WHERE canonical_name ILIKE '%haleem%' LIMIT 1;
-    SELECT id INTO v_chai_id FROM public.dishes WHERE canonical_name ILIKE '%chai%' LIMIT 1;
+    SELECT id INTO v_biryani_id FROM public.dishes WHERE name ILIKE '%biryani%' LIMIT 1;
+    SELECT id INTO v_pesarattu_id FROM public.dishes WHERE name ILIKE '%pesarattu%' LIMIT 1;
+    SELECT id INTO v_haleem_id FROM public.dishes WHERE name ILIKE '%haleem%' LIMIT 1;
+    SELECT id INTO v_chai_id FROM public.dishes WHERE name ILIKE '%chai%' LIMIT 1;
 
     IF v_biryani_id IS NOT NULL THEN
         INSERT INTO public.dish_translations (dish_id, locale, name)

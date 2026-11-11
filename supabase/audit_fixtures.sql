@@ -17,15 +17,19 @@ INSERT INTO auth.users (
     created_at,
     updated_at,
     role,
-    aud
+    aud,
+    confirmation_token,
+    recovery_token,
+    email_change_token_new,
+    email_change
 ) VALUES
-    ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'owner_public@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Public Owner","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'owner_private@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Private Owner","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'follower_accepted@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Accepted Follower","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'follower_pending@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Pending Follower","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'stranger@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Stranger User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'blocked_by_owner@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Blocked User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated'),
-    ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000', 'blocker_of_owner@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Blocker User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), 'authenticated', 'authenticated')
+    ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'owner_public@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Public Owner","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'owner_private@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Private Owner","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'follower_accepted@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Accepted Follower","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'follower_pending@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Pending Follower","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'stranger@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Stranger User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'blocked_by_owner@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Blocked User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', '')),
+    ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000', 'blocker_of_owner@mors.food', extensions.crypt('MorsTastePassword2026!', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"displayName":"Blocker User","invite_code":"HYDERABAD-BETA-2026"}', now(), now(), ('authenticated', 'authenticated', '', '', '', ''))
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Deterministic Profiles (public.profiles)
@@ -114,7 +118,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- 6. Photos (including GPS-tagged test reference)
 INSERT INTO public.experience_photos (id, experience_id, storage_path, width, height, blurhash, alt_text, position) VALUES
-    ('00000000-0000-0000-0004-000000000021', '00000000-0000-0004-0000-000000000001', 'audit/gps_tagged_sample.jpg', 1280, 720, 'L6PZfSi_.AyE_3t7t7R**0o#DgR4', 'Irani chai and biscuit near Charminar with GPS metadata', 1)
+    ('00000000-0000-0000-0004-000000000021', '00000000-0000-0000-0004-000000000001', 'audit/gps_tagged_sample.jpg', 1280, 720, 'L6PZfSi_.AyE_3t7t7R**0o#DgR4', 'Irani chai and biscuit near Charminar with GPS metadata', 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. Mixed Collection (Public + Private entries + Dishes + Places)
@@ -131,9 +135,9 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.collection_items (collection_id, item_type, experience_id, dish_id, place_id, position) VALUES
     -- Visible public experience
-    ('00000000-0000-0000-0005-000000000001', 'experience', '00000000-0000-0001-0000-000000000001', NULL, NULL, 1.0),
+    ('00000000-0000-0000-0005-000000000001', 'experience', '00000000-0000-0000-0001-000000000001', NULL, NULL, 1.0),
     -- Hidden private experience (must NOT leak to strangers)
-    ('00000000-0000-0000-0005-000000000001', 'experience', '00000000-0000-0001-0000-000000000003', NULL, NULL, 2.0),
+    ('00000000-0000-0000-0005-000000000001', 'experience', '00000000-0000-0000-0001-000000000003', NULL, NULL, 2.0),
     -- Dish reference
     ('00000000-0000-0000-0005-000000000001', 'dish', NULL, '00000000-0000-0000-0000-000000000201', NULL, 3.0),
     -- Place reference
@@ -189,3 +193,5 @@ BEGIN
     RETURN p_count;
 END;
 $$;
+
+

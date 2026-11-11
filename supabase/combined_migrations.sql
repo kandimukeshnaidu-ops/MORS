@@ -38,8 +38,10 @@ CREATE TABLE public.profiles (
   following_count integer DEFAULT 0 NOT NULL,
   experiences_count integer DEFAULT 0 NOT NULL,
   role text DEFAULT 'user'::text NOT NULL CHECK (role IN ('user', 'moderator', 'admin')),
+  is_admin boolean GENERATED ALWAYS AS (role = 'admin') STORED,
   onboarding_completed_at timestamptz,
   deletion_requested_at timestamptz,
+  deletion_pending_at timestamptz,
   created_at timestamptz DEFAULT now() NOT NULL,
   updated_at timestamptz DEFAULT now() NOT NULL,
   CONSTRAINT username_format CHECK (username ~ '^[a-z0-9_.]{3,30}$')
@@ -174,6 +176,16 @@ AS $$
     WHERE (blocker_id = a AND blocked_id = b)
        OR (blocker_id = b AND blocked_id = a)
   );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_blocked_bidirectional(a uuid, b uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT public.is_blocked_between(a, b);
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_accepted_follower(viewer uuid, target uuid)
@@ -1089,7 +1101,7 @@ DECLARE
   v_source record;
   v_target record;
   v_user_id uuid;
-  v_user_role public.user_role_t;
+  v_user_role text;
 BEGIN
   v_user_id := (SELECT auth.uid());
   IF v_user_id IS NULL THEN
@@ -1154,7 +1166,7 @@ DECLARE
   v_source record;
   v_target record;
   v_user_id uuid;
-  v_user_role public.user_role_t;
+  v_user_role text;
 BEGIN
   v_user_id := (SELECT auth.uid());
   IF v_user_id IS NULL THEN
@@ -2206,8 +2218,8 @@ $$;
 -- Migration: 20261110000009_search.sql
 
 -- 1. Trigram and FTS Indexes
-CREATE INDEX IF NOT EXISTS idx_dishes_canonical_name_trgm 
-ON public.dishes USING gin (canonical_name extensions.gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_dishes_name_trgm 
+ON public.dishes USING gin (name extensions.gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS idx_places_name_trgm 
 ON public.places USING gin (name extensions.gin_trgm_ops);
@@ -2257,21 +2269,21 @@ BEGIN
         SELECT
             'dish'::text AS r_type,
             d.id::text AS r_id,
-            d.canonical_name::text AS r_title,
+            d.name::text AS r_title,
             COALESCE(d.cuisine, 'Dish')::text AS r_subtitle,
-            d.primary_photo_path::text AS r_photo,
+            NULL::text AS r_photo,
             ('/dish/' || d.slug)::text AS r_url,
             GREATEST(
-                extensions.similarity(d.canonical_name, clean_q),
+                extensions.similarity(d.name, clean_q),
                 extensions.similarity(d.normalized_name, lower(clean_q)),
-                CASE WHEN d.canonical_name ILIKE '%' || clean_q || '%' THEN 0.8 ELSE 0.0 END
+                CASE WHEN d.name ILIKE '%' || clean_q || '%' THEN 0.8 ELSE 0.0 END
             )::double precision AS r_score
         FROM public.dishes d
         WHERE (p_types IS NULL OR 'dish' = ANY(p_types))
           AND (
-              d.canonical_name ILIKE '%' || clean_q || '%' OR
+              d.name ILIKE '%' || clean_q || '%' OR
               d.normalized_name % lower(clean_q) OR
-              extensions.similarity(d.canonical_name, clean_q) > 0.25
+              extensions.similarity(d.name, clean_q) > 0.25
           )
 
         UNION ALL
@@ -3919,10 +3931,10 @@ DECLARE
     v_haleem_id UUID;
     v_chai_id UUID;
 BEGIN
-    SELECT id INTO v_biryani_id FROM public.dishes WHERE canonical_name ILIKE '%biryani%' LIMIT 1;
-    SELECT id INTO v_pesarattu_id FROM public.dishes WHERE canonical_name ILIKE '%pesarattu%' LIMIT 1;
-    SELECT id INTO v_haleem_id FROM public.dishes WHERE canonical_name ILIKE '%haleem%' LIMIT 1;
-    SELECT id INTO v_chai_id FROM public.dishes WHERE canonical_name ILIKE '%chai%' LIMIT 1;
+    SELECT id INTO v_biryani_id FROM public.dishes WHERE name ILIKE '%biryani%' LIMIT 1;
+    SELECT id INTO v_pesarattu_id FROM public.dishes WHERE name ILIKE '%pesarattu%' LIMIT 1;
+    SELECT id INTO v_haleem_id FROM public.dishes WHERE name ILIKE '%haleem%' LIMIT 1;
+    SELECT id INTO v_chai_id FROM public.dishes WHERE name ILIKE '%chai%' LIMIT 1;
 
     IF v_biryani_id IS NOT NULL THEN
         INSERT INTO public.dish_translations (dish_id, locale, name)
@@ -4703,10 +4715,10 @@ CREATE POLICY storage_quotas_admin ON public.storage_quotas
 -- 2. Covering Indexes for High-Throughput Public Feed and Query Paths
 CREATE INDEX IF NOT EXISTS idx_food_experiences_public_feed
   ON public.food_experiences(status, visibility, eaten_at DESC)
-  INCLUDE (id, user_id, place_id, rating);
+  INCLUDE (id, user_id, place_id, overall_rating);
 
-CREATE INDEX IF NOT EXISTS idx_notifications_user_unread
-  ON public.notifications(user_id, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_recipient_unread
+  ON public.notifications(recipient_id, is_read, created_at DESC);
 
 -- 3. Storage Usage RPC
 CREATE OR REPLACE FUNCTION public.get_user_storage_usage(p_user_id UUID)
@@ -5323,14 +5335,14 @@ CREATE POLICY collection_members_select ON public.collection_members
   FOR SELECT
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
 CREATE POLICY collection_members_insert ON public.collection_members
   FOR INSERT
   WITH CHECK (
-    EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -5338,7 +5350,7 @@ CREATE POLICY collection_members_update ON public.collection_members
   FOR UPDATE
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -5346,7 +5358,7 @@ CREATE POLICY collection_members_delete ON public.collection_members
   FOR DELETE
   USING (
     (SELECT auth.uid()) = user_id
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -5369,7 +5381,7 @@ CREATE POLICY plans_select ON public.plans
   FOR SELECT
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted')
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
@@ -5379,7 +5391,7 @@ CREATE POLICY plans_insert ON public.plans
   WITH CHECK (
     created_by = (SELECT auth.uid())
     AND (
-      EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+      EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
       OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted' AND cm.role = 'editor')
       OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
     )
@@ -5389,7 +5401,7 @@ CREATE POLICY plans_update ON public.plans
   FOR UPDATE
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = plans.collection_id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted' AND cm.role = 'editor')
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
@@ -5398,7 +5410,7 @@ CREATE POLICY plans_delete ON public.plans
   FOR DELETE
   USING (
     created_by = (SELECT auth.uid())
-    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.owner_id = (SELECT auth.uid()))
+    OR EXISTS (SELECT 1 FROM public.collections c WHERE c.id = collection_id AND c.user_id = (SELECT auth.uid()))
     OR EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = (SELECT auth.uid()) AND p.is_admin = true)
   );
 
@@ -5422,7 +5434,7 @@ CREATE POLICY plan_votes_select ON public.plan_votes
       SELECT 1 FROM public.plans p
       JOIN public.collections c ON c.id = p.collection_id
       WHERE p.id = plan_id
-        AND (c.owner_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
+        AND (c.user_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
     )
     OR EXISTS (SELECT 1 FROM public.profiles pr WHERE pr.id = (SELECT auth.uid()) AND pr.is_admin = true)
   );
@@ -5435,7 +5447,7 @@ CREATE POLICY plan_votes_insert ON public.plan_votes
       SELECT 1 FROM public.plans p
       JOIN public.collections c ON c.id = p.collection_id
       WHERE p.id = plan_id
-        AND (c.owner_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
+        AND (c.user_id = (SELECT auth.uid()) OR EXISTS (SELECT 1 FROM public.collection_members cm WHERE cm.collection_id = c.id AND cm.user_id = (SELECT auth.uid()) AND cm.status = 'accepted'))
     )
   );
 
@@ -5485,7 +5497,7 @@ BEGIN
 
   SELECT EXISTS (
     SELECT 1 FROM public.collections c
-    WHERE c.id = v_coll_id AND c.owner_id = v_user_id
+    WHERE c.id = v_coll_id AND c.user_id = v_user_id
     UNION ALL
     SELECT 1 FROM public.collection_members cm
     WHERE cm.collection_id = v_coll_id AND cm.user_id = v_user_id AND cm.status = 'accepted'
@@ -5522,7 +5534,7 @@ BEGIN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
-  SELECT p.*, c.owner_id AS coll_owner_id
+  SELECT p.*, c.user_id AS coll_owner_id
   INTO v_plan
   FROM public.plans p
   JOIN public.collections c ON c.id = p.collection_id
@@ -5640,7 +5652,6 @@ CREATE TABLE IF NOT EXISTS public.entitlement_grants (
   entitlement_key TEXT NOT NULL CHECK (entitlement_key IN ('storage_boost_10gb', 'printable_recap', 'advanced_analytics', 'custom_theme')),
   granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   expires_at TIMESTAMPTZ,
-  PRIMARY KEY (id),
   UNIQUE (user_id, entitlement_key)
 );
 CREATE INDEX IF NOT EXISTS idx_entitlement_grants_user ON public.entitlement_grants(user_id);

@@ -106,6 +106,7 @@ UPDATE public.food_experiences
 SET eaten_date = (eaten_at AT TIME ZONE 'Asia/Kolkata')::date
 WHERE eaten_date IS NULL;
 
+ALTER TABLE public.food_experiences ALTER COLUMN eaten_date SET DEFAULT CURRENT_DATE;
 ALTER TABLE public.food_experiences ALTER COLUMN eaten_date SET NOT NULL;
 
 -- Add unique constraint on (user_id, client_request_id)

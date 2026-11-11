@@ -38,8 +38,10 @@ CREATE TABLE public.profiles (
   following_count integer DEFAULT 0 NOT NULL,
   experiences_count integer DEFAULT 0 NOT NULL,
   role text DEFAULT 'user'::text NOT NULL CHECK (role IN ('user', 'moderator', 'admin')),
+  is_admin boolean GENERATED ALWAYS AS (role = 'admin') STORED,
   onboarding_completed_at timestamptz,
   deletion_requested_at timestamptz,
+  deletion_pending_at timestamptz,
   created_at timestamptz DEFAULT now() NOT NULL,
   updated_at timestamptz DEFAULT now() NOT NULL,
   CONSTRAINT username_format CHECK (username ~ '^[a-z0-9_.]{3,30}$')
@@ -174,6 +176,16 @@ AS $$
     WHERE (blocker_id = a AND blocked_id = b)
        OR (blocker_id = b AND blocked_id = a)
   );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_blocked_bidirectional(a uuid, b uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT public.is_blocked_between(a, b);
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_accepted_follower(viewer uuid, target uuid)
