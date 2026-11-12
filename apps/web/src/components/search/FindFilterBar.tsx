@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import type { FindMode, FindSort } from '@mors/domain';
 
 interface FindFilterBarProps {

@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface DimensionBarProps {
   label: string;
   rating10: number | null;

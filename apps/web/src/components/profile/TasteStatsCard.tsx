@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { PersonalTasteIdentity } from '@mors/db';
 import type { ProfileTasteStats } from '@/app/explore/actions';
 import { setTasteProfileSharing } from '@/app/explore/actions';

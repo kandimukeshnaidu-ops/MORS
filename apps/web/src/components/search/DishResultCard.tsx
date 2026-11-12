@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import type { DishResult } from '@/app/search/actions';
 import { formatDisplayRating } from '@mors/domain';
