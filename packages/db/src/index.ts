@@ -25,6 +25,68 @@ export type ReportTarget =
   | 'dish'
   | 'place';
 
+export interface PersonalTasteIdentity {
+  user_id: string;
+  privacy: {
+    is_owner: boolean;
+    sharing_enabled: boolean;
+    data_scope: 'all_published' | 'public_pool_only';
+  };
+  taste_profile: {
+    top_cuisines: Array<{
+      cuisine: string;
+      average_rating: number;
+      evidence_count: number;
+      evidence_level: 'insufficient' | 'early_signal' | 'consistent_pattern';
+    }>;
+    top_rated_dishes: Array<{
+      name: string;
+      dish_id: string | null;
+      average_rating: number;
+      evidence_count: number;
+      evidence_level: 'single_observation' | 'early_signal' | 'consistent_pattern';
+    }>;
+    dimension_patterns: {
+      place_dimensions: {
+        food_quality: { average: number | null; count: number };
+        value_for_money: { average: number | null; count: number };
+        ambience: { average: number | null; count: number };
+        service: { average: number | null; count: number };
+        hygiene: { average: number | null; count: number };
+      };
+      dish_dimensions: {
+        taste: { average: number | null; count: number };
+        portion: { average: number | null; count: number };
+        value: { average: number | null; count: number };
+      };
+    };
+  };
+  food_activity: {
+    total_meals: number;
+    unique_dishes: number;
+    unique_places: number;
+    most_logged_dishes: Array<{
+      name: string;
+      dish_id: string | null;
+      count: number;
+    }>;
+    most_logged_cuisines: Array<{
+      cuisine: string;
+      count: number;
+    }>;
+    monthly_activity: Array<{
+      label: string;
+      count: number;
+    }>;
+  };
+  temporal_shifts: {
+    recent_90d_meals: number;
+    prior_90d_meals: number;
+    recent_top_cuisine: string | null;
+    has_sufficient_comparison_data: boolean;
+  };
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -40,6 +102,7 @@ export type Database = {
           favourite_cuisines: string[];
           social_links: Json;
           is_private: boolean;
+          taste_profile_sharing_enabled: boolean;
           default_visibility: Visibility;
           discoverable: boolean;
           notification_prefs: Json;
@@ -64,6 +127,7 @@ export type Database = {
           favourite_cuisines?: string[];
           social_links?: Json;
           is_private?: boolean;
+          taste_profile_sharing_enabled?: boolean;
           default_visibility?: Visibility;
           discoverable?: boolean;
           notification_prefs?: Json;
@@ -88,6 +152,7 @@ export type Database = {
           favourite_cuisines?: string[];
           social_links?: Json;
           is_private?: boolean;
+          taste_profile_sharing_enabled?: boolean;
           default_visibility?: Visibility;
           discoverable?: boolean;
           notification_prefs?: Json;
@@ -1482,6 +1547,12 @@ export type Database = {
           public_experience_count: number;
           public_rating_count: number;
           public_rating_avg: number | null;
+          taste_avg: number | null;
+          taste_count: number;
+          portion_avg: number | null;
+          portion_count: number;
+          value_avg: number | null;
+          value_count: number;
         };
         Relationships: [];
       };
@@ -1489,12 +1560,159 @@ export type Database = {
         Row: {
           place_id: string;
           public_experience_count: number;
+          public_rating_count: number;
           public_rating_avg: number | null;
+          food_quality_avg: number | null;
+          food_quality_count: number;
+          value_for_money_avg: number | null;
+          value_for_money_count: number;
+          ambience_avg: number | null;
+          ambience_count: number;
+          service_avg: number | null;
+          service_count: number;
+          hygiene_avg: number | null;
+          hygiene_count: number;
+          would_return_pct: number | null;
         };
         Relationships: [];
       };
     };
     Functions: {
+      find_restaurants: {
+        Args: {
+          p_query?: string | null;
+          p_city?: string | null;
+          p_cuisine?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: Array<{
+          id: string;
+          name: string;
+          address: string | null;
+          city: string | null;
+          place_type: string | null;
+          lat: number | null;
+          lng: number | null;
+          public_experience_count: number;
+          public_rating_count: number;
+          public_rating_avg: number | null;
+          food_quality_avg: number | null;
+          value_for_money_avg: number | null;
+          ambience_avg: number | null;
+          service_avg: number | null;
+          hygiene_avg: number | null;
+          would_return_pct: number | null;
+          top_dishes: any;
+          similarity: number;
+        }>;
+      };
+      find_food_dishes: {
+        Args: {
+          p_query?: string | null;
+          p_cuisine?: string | null;
+          p_dietary_tag?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: Array<{
+          id: string;
+          name: string;
+          slug: string;
+          cuisine: string | null;
+          description: string | null;
+          lat: number | null;
+          lng: number | null;
+          public_experience_count: number;
+          public_rating_count: number;
+          public_rating_avg: number | null;
+          taste_avg: number | null;
+          portion_avg: number | null;
+          value_avg: number | null;
+          top_places: any;
+          similarity: number;
+        }>;
+      };
+      get_regional_restaurant_rankings: {
+        Args: {
+          p_city?: string | null;
+          p_cuisine?: string | null;
+          p_dimension?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: Array<{
+          rank_position: number;
+          id: string;
+          name: string;
+          address: string | null;
+          city: string | null;
+          place_type: string | null;
+          rating_avg: number | null;
+          rating_count: number;
+          bayesian_score: number | null;
+          is_ranked: boolean;
+          food_quality_avg: number | null;
+          value_avg: number | null;
+          ambience_avg: number | null;
+          service_avg: number | null;
+          hygiene_avg: number | null;
+          would_return_pct: number | null;
+          top_dishes: any;
+        }>;
+      };
+      get_regional_dish_rankings: {
+        Args: {
+          p_city?: string | null;
+          p_cuisine?: string | null;
+          p_dimension?: string | null;
+          p_limit?: number | null;
+          p_offset?: number | null;
+        };
+        Returns: Array<{
+          rank_position: number;
+          id: string;
+          name: string;
+          slug: string;
+          cuisine: string | null;
+          rating_avg: number | null;
+          rating_count: number;
+          bayesian_score: number | null;
+          is_ranked: boolean;
+          taste_avg: number | null;
+          portion_avg: number | null;
+          value_avg: number | null;
+          top_places: any;
+        }>;
+      };
+      get_regional_overview: {
+        Args: {
+          p_city?: string | null;
+        };
+        Returns: Array<{
+          city_name: string;
+          total_venues: number;
+          ranked_venues: number;
+          total_dishes: number;
+          ranked_dishes: number;
+          regional_avg_rating: number | null;
+          top_cuisines: any;
+        }>;
+      };
+get_place_profile: {
+        Args: {
+          p_place_id: string;
+          p_viewer_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_dish_profile: {
+        Args: {
+          p_slug: string;
+          p_viewer_id?: string | null;
+        };
+        Returns: Json;
+      };
       create_experience: {
         Args: { payload: Json };
         Returns: string;
@@ -1961,6 +2179,77 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      get_personal_taste_identity: {
+        Args: {
+          p_user_id?: string | null;
+          p_viewer_id?: string | null;
+        };
+        Returns: PersonalTasteIdentity | null;
+      };
+      set_taste_profile_sharing: {
+        Args: {
+          p_enabled: boolean;
+        };
+        Returns: boolean;
+      };
+      get_home_feed_v2: {
+        Args: {
+          p_cursor_published_at?: string | null;
+          p_cursor_id?: string | null;
+          p_limit?: number;
+        };
+        Returns: {
+          items: Array<{
+            id: string;
+            title: string | null;
+            category_slug: string;
+            cuisine: string | null;
+            eaten_at: string;
+            published_at: string;
+            visibility: Visibility;
+            overall_rating: number | null;
+            description: string | null;
+            author: {
+              id: string;
+              username: string;
+              display_name: string | null;
+              avatar_path: string | null;
+            };
+            place: {
+              id: string;
+              name: string;
+              city: string | null;
+            } | null;
+            dishes: Array<{
+              display_name: string;
+              rating: number | null;
+              taste_rating: number | null;
+            }>;
+            primary_photo_path: string | null;
+            likes_count: number;
+            comments_count: number;
+            is_liked_by_viewer: boolean;
+          }>;
+          next_cursor: {
+            published_at: string;
+            id: string;
+          } | null;
+        };
+      };
+      get_taste_aligned_profiles: {
+        Args: {
+          p_limit?: number;
+        };
+        Returns: Array<{
+          candidate_id: string;
+          c_username: string;
+          c_display_name: string | null;
+          c_avatar_path: string | null;
+          c_bio: string | null;
+          match_cuisine: string | null;
+          mutual_dishes_count: number;
+        }>;
       };
     };
     Enums: {

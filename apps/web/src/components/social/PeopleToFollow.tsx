@@ -41,9 +41,15 @@ export function PeopleToFollow({
                 <span className="block truncate text-xs font-medium text-[var(--text-primary)] hover:underline">
                   {p.displayName || p.username}
                 </span>
-                <span className="block truncate text-[11px] text-[var(--text-muted)]">
-                  @{p.username} • {p.experiencesCount} logs
-                </span>
+                {p.matchReason ? (
+                  <span className="block truncate text-[11px] text-[var(--text-secondary)] font-medium">
+                    ✦ {p.matchReason}
+                  </span>
+                ) : (
+                  <span className="block truncate text-[11px] text-[var(--text-muted)]">
+                    @{p.username} • {p.experiencesCount} logs
+                  </span>
+                )}
               </div>
             </Link>
 

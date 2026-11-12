@@ -1,7 +1,11 @@
-import 'react';
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { RatingStars } from './RatingStars';
 import { Avatar } from './Avatar';
 import { Chip } from './Chip';
+import { LikeButton } from '@/components/engagement/LikeButton';
 
 export interface ExperienceCardProps {
   id: string;
@@ -24,9 +28,13 @@ export interface ExperienceCardProps {
     name: string;
     rating?: number | null;
   }>;
+  likesCount?: number;
+  commentsCount?: number;
+  isLikedByViewer?: boolean;
 }
 
 export function ExperienceCard({
+  id,
   author,
   title,
   category,
@@ -36,14 +44,32 @@ export function ExperienceCard({
   date,
   photos = [],
   dishes = [],
+  likesCount = 0,
+  commentsCount = 0,
+  isLikedByViewer = false,
 }: ExperienceCardProps) {
+  const [copied, setCopied] = useState(false);
   const primaryPhoto = photos[0];
 
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      const url = `${window.location.origin}/e/${id}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <article className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all hover:border-[var(--border-strong)]">
+    <article className="overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all hover:border-[var(--border-strong)] shadow-xs">
       {/* Header: Author + Meta */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
-        <div className="flex items-center gap-2.5">
+        <Link
+          href={`/u/${author.username}`}
+          className="flex items-center gap-2.5 hover:opacity-85 transition-opacity"
+        >
           <Avatar
             src={author.avatarUrl}
             alt={author.displayName}
@@ -58,7 +84,7 @@ export function ExperienceCard({
               @{author.username}
             </div>
           </div>
-        </div>
+        </Link>
         <div className="text-right">
           <span className="text-[11px] text-[var(--text-muted)] font-mono">
             {date}
@@ -130,6 +156,71 @@ export function ExperienceCard({
             ))}
           </div>
         )}
+      </div>
+
+      {/* Social Actions Footer */}
+      <div className="flex items-center justify-between border-t border-[var(--border-subtle)] px-4 py-2.5 bg-[var(--bg-elevated)]/30">
+        <div className="flex items-center gap-2">
+          <LikeButton
+            experienceId={id}
+            initialLiked={isLikedByViewer}
+            initialCount={likesCount}
+            size="sm"
+          />
+
+          <Link
+            href={`/e/${id}#comments`}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-all"
+            title="View discussion"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.636 1.05.502 1.664l-.45 2.067a.75.75 0 00.912.885l2.42-.646a2.25 2.25 0 011.396.11c.626.262 1.28.39 1.947.39z"
+              />
+            </svg>
+            <span className="font-mono font-medium">{commentsCount}</span>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleShare}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-all"
+            title="Share link"
+          >
+            <svg
+              className="w-3.5 h-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.933 2.185 2.25 2.25 0 00-3.933-2.185zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"
+              />
+            </svg>
+            <span>{copied ? 'Copied!' : 'Share'}</span>
+          </button>
+
+          <Link
+            href={`/e/${id}`}
+            className="inline-flex items-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-strong)] transition-all"
+            title="View full experience"
+          >
+            View
+          </Link>
+        </div>
       </div>
     </article>
   );

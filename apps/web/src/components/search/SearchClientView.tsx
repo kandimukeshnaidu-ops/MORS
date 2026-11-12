@@ -1,185 +1,325 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { performSearch, type SearchResultItem } from '@/app/search/actions';
-import { SearchResultCard } from '@/components/search/SearchResultCard';
-import { EmptyState } from '@/components/ui/EmptyState';
-
-const CATEGORY_TABS = [
-  { id: 'all', label: 'All Results' },
-  { id: 'dish', label: 'Dishes' },
-  { id: 'place', label: 'Places' },
-  { id: 'user', label: 'People' },
-  { id: 'experience', label: 'Experiences' },
-  { id: 'collection', label: 'Collections' },
-];
+import type { FindMode, FindSort } from '@mors/domain';
+import {
+  searchRestaurants,
+  searchFoodDishes,
+  getSearchSuggestions,
+  type RestaurantResult,
+  type DishResult,
+  type SearchResultItem,
+} from '@/app/search/actions';
+import { FindModeSelector } from '@/components/search/FindModeSelector';
+import { FindFilterBar } from '@/components/search/FindFilterBar';
+import { RestaurantResultCard } from '@/components/search/RestaurantResultCard';
+import { DishResultCard } from '@/components/search/DishResultCard';
+import { SearchSkeleton } from '@/components/ui/skeletons/LayoutSkeletons';
 
 export function SearchClientView() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Read URL params
+  const initialMode = (searchParams.get('mode') === 'food' ? 'food' : 'restaurants') as FindMode;
   const initialQuery = searchParams.get('q') || '';
-  const initialType = searchParams.get('type') || 'all';
   const initialCity = searchParams.get('city') || '';
+  const initialCuisine = searchParams.get('cuisine') || '';
+  const initialDietaryTag = searchParams.get('dietary') || '';
+  const initialSort = (searchParams.get('sort') || 'relevance') as FindSort;
 
+  // Local state
+  const [mode, setMode] = useState<FindMode>(initialMode);
   const [query, setQuery] = useState(initialQuery);
-  const [selectedType, setSelectedType] = useState(initialType);
-  const [cityFilter, setCityFilter] = useState(initialCity);
-  const [results, setResults] = useState<SearchResultItem[]>([]);
-  const [timingMs, setTimingMs] = useState<number>(0);
+  const [city, setCity] = useState(initialCity);
+  const [cuisine, setCuisine] = useState(initialCuisine);
+  const [dietaryTag, setDietaryTag] = useState(initialDietaryTag);
+  const [sort, setSort] = useState<FindSort>(initialSort);
+
+  // Results & status
+  const [restaurantResults, setRestaurantResults] = useState<RestaurantResult[]>([]);
+  const [dishResults, setDishResults] = useState<DishResult[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchResultItem[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [timingMs, setTimingMs] = useState(0);
   const [, startTransition] = useTransition();
 
-  // Execute search when filters or debounced query changes
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      runSearch(query, selectedType, cityFilter);
-      syncUrl(query, selectedType, cityFilter);
-    }, 280);
-
-    return () => clearTimeout(handler);
-  }, [query, selectedType, cityFilter]);
-
-  const syncUrl = (q: string, type: string, city: string) => {
+  // Sync URL when query or filters change
+  const syncUrl = (
+    currentMode: FindMode,
+    q: string,
+    c: string,
+    cuis: string,
+    diet: string,
+    s: FindSort
+  ) => {
     const params = new URLSearchParams();
+    params.set('mode', currentMode);
     if (q.trim()) params.set('q', q.trim());
-    if (type !== 'all') params.set('type', type);
-    if (city.trim()) params.set('city', city.trim());
+    if (c.trim()) params.set('city', c.trim());
+    if (cuis.trim()) params.set('cuisine', cuis.trim());
+    if (diet.trim()) params.set('dietary', diet.trim());
+    if (s !== 'relevance') params.set('sort', s);
 
     startTransition(() => {
       router.replace(`/search?${params.toString()}`);
     });
   };
 
-  const runSearch = async (q: string, type: string, city: string) => {
-    if (!q.trim()) {
-      setResults([]);
-      setTimingMs(0);
-      return;
-    }
+  // Debounced search runner
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      executeSearch();
+      syncUrl(mode, query, city, cuisine, dietaryTag, sort);
+    }, 280);
 
+    return () => clearTimeout(timer);
+  }, [mode, query, city, cuisine, dietaryTag, sort]);
+
+  // Autocomplete suggestions
+  useEffect(() => {
+    if (query.trim().length >= 2) {
+      getSearchSuggestions(query, mode).then((res) => {
+        setSuggestions(res);
+      });
+    } else {
+      setSuggestions([]);
+    }
+  }, [query, mode]);
+
+  const executeSearch = async () => {
     setLoading(true);
-    const typesFilter = type === 'all' ? undefined : [type];
-    const res = await performSearch(q, {
-      types: typesFilter,
-      city: city || undefined,
-      limit: 40,
-    });
-    setResults(res.results);
-    setTimingMs(res.timingMs);
-    setLoading(false);
+    setError(null);
+
+    try {
+      if (mode === 'restaurants') {
+        const res = await searchRestaurants({
+          query: query.trim() || undefined,
+          city: city.trim() || undefined,
+          cuisine: cuisine.trim() || undefined,
+          sort,
+          limit: 25,
+        });
+
+        if (res.error) {
+          setError(res.error);
+          setRestaurantResults([]);
+        } else {
+          setRestaurantResults(res.results);
+          setTimingMs(res.timingMs);
+        }
+      } else {
+        const res = await searchFoodDishes({
+          query: query.trim() || undefined,
+          cuisine: cuisine.trim() || undefined,
+          dietary_tag: dietaryTag as any || undefined,
+          sort,
+          limit: 25,
+        });
+
+        if (res.error) {
+          setError(res.error);
+          setDishResults([]);
+        } else {
+          setDishResults(res.results);
+          setTimingMs(res.timingMs);
+        }
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to complete search. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleClearFilters = () => {
+    setCity('');
+    setCuisine('');
+    setDietaryTag('');
+    setSort('relevance');
+  };
+
+  const handleModeSwitch = (newMode: FindMode) => {
+    setMode(newMode);
+    setShowSuggestions(false);
+  };
+
+  const resultCount = mode === 'restaurants' ? restaurantResults.length : dishResults.length;
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Search Header */}
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-          Search MORS
+    <div className="max-w-3xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
+          Find
         </h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Explore canonical dishes, dining venues, food journals, curators, and collections.
+        <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+          Explore restaurants and dishes backed by real community dining logs in Hyderabad and beyond.
         </p>
       </div>
 
-      {/* Search Inputs */}
-      <div className="space-y-3 mb-6">
-        <div className="relative">
+      {/* Mode Selector */}
+      <FindModeSelector mode={mode} onChange={handleModeSwitch} />
+
+      {/* Search Input Box */}
+      <div className="relative">
+        <div className="relative flex items-center">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search dishes, places, people, or journals... (e.g. biryani, pista house)"
-            className="w-full pl-10 pr-10 py-3 text-sm bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors"
+            onFocus={() => setShowSuggestions(true)}
+            placeholder={
+              mode === 'restaurants'
+                ? 'Search restaurants, cafes, street stalls, areas... (e.g. Bawarchi, Jubilee Hills)'
+                : 'Search dishes, biryani, dosas, desserts... (e.g. Haleem, Chicken Biryani)'
+            }
+            className="w-full pl-10 pr-10 py-3 text-sm bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] transition-colors shadow-sm"
           />
-          <span className="absolute left-3.5 top-3.5 text-xs text-[var(--text-muted)]">
-            🔍
+          <span className="absolute left-3.5 text-[var(--text-muted)] pointer-events-none">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
           </span>
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="absolute right-3.5 top-3.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              aria-label="Clear query"
+              className="absolute right-3.5 p-1 rounded hover:bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
-              ✕
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           )}
         </div>
 
-        {/* City Filter (Useful for Places) */}
-        {(selectedType === 'all' || selectedType === 'place') && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-[var(--text-secondary)] shrink-0">City:</span>
-            <input
-              type="text"
-              value={cityFilter}
-              onChange={(e) => setCityFilter(e.target.value)}
-              placeholder="Filter by city (e.g. Hyderabad, Bengaluru, Mumbai)"
-              className="px-3 py-1.5 text-xs bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] max-w-xs"
-            />
-            {cityFilter && (
+        {/* Rapid Suggestions Dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1.5 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl shadow-lg z-30 overflow-hidden divide-y divide-[var(--border-subtle)]">
+            {suggestions.map((s) => (
               <button
+                key={s.id}
                 type="button"
-                onClick={() => setCityFilter('')}
-                className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                onClick={() => {
+                  setQuery(s.title);
+                  setShowSuggestions(false);
+                }}
+                className="w-full px-4 py-2.5 text-left flex items-center justify-between hover:bg-[var(--bg-surface)] transition-colors text-xs"
               >
-                Clear city
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-[var(--text-primary)]">{s.title}</span>
+                  {s.subtitle && <span className="text-[var(--text-muted)]">({s.subtitle})</span>}
+                </div>
+                <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--accent-primary)]">
+                  {s.type}
+                </span>
               </button>
-            )}
+            ))}
           </div>
         )}
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-[var(--border-subtle)]">
-        {CATEGORY_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setSelectedType(tab.id)}
-            className={`px-3 py-1.5 text-xs rounded-full font-medium transition-colors shrink-0 ${
-              selectedType === tab.id
-                ? 'bg-[var(--accent-primary)] text-[var(--bg-primary)]'
-                : 'bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Filter Bar */}
+      <FindFilterBar
+        mode={mode}
+        city={city}
+        onCityChange={setCity}
+        cuisine={cuisine}
+        onCuisineChange={setCuisine}
+        dietaryTag={dietaryTag}
+        onDietaryTagChange={setDietaryTag}
+        sort={sort}
+        onSortChange={setSort}
+        onClearAll={handleClearFilters}
+      />
+
+      {/* Results Header */}
+      <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-1">
+        <span>
+          {loading ? (
+            'Searching…'
+          ) : (
+            <>
+              Found <strong className="text-[var(--text-primary)]">{resultCount}</strong>{' '}
+              {mode === 'restaurants'
+                ? resultCount === 1
+                  ? 'restaurant'
+                  : 'restaurants'
+                : resultCount === 1
+                ? 'dish'
+                : 'dishes'}
+              {timingMs > 0 && <span className="ml-1">({timingMs}ms)</span>}
+            </>
+          )}
+        </span>
       </div>
 
-      {/* Timing and Result Counts */}
-      {query.trim() && !loading && (
-        <div className="flex items-center justify-between text-xs text-[var(--text-muted)] mb-4 font-mono">
-          <span>{results.length} {results.length === 1 ? 'match' : 'matches'} found</span>
-          <span>{timingMs}ms query time</span>
+      {/* Error State */}
+      {error && (
+        <div className="p-4 bg-red-950/20 border border-red-800/40 rounded-xl text-xs space-y-2">
+          <p className="text-red-400 font-medium">{error}</p>
+          <button
+            type="button"
+            onClick={executeSearch}
+            className="px-3 py-1 bg-red-900/40 hover:bg-red-800/60 text-red-200 rounded text-xs font-semibold transition-colors"
+          >
+            Retry Search
+          </button>
         </div>
       )}
 
-      {/* Search Results / States */}
+      {/* Results List or Loading */}
       {loading ? (
-        <div className="py-16 text-center text-xs text-[var(--text-muted)] font-mono">
-          Searching MORS archive...
+        <SearchSkeleton />
+      ) : resultCount > 0 ? (
+        <div className="space-y-3.5">
+          {mode === 'restaurants'
+            ? restaurantResults.map((r) => <RestaurantResultCard key={r.id} restaurant={r} />)
+            : dishResults.map((d) => <DishResultCard key={d.id} dish={d} />)}
         </div>
-      ) : !query.trim() ? (
-        <div className="py-16 text-center space-y-3">
-          <div className="text-3xl">🍲</div>
-          <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-            Type a dish name, place, friend&apos;s username, or food memory above to search. Typo-tolerant search is enabled.
-          </p>
-        </div>
-      ) : results.length === 0 ? (
-        <EmptyState
-          icon="🔍"
-          title="No results found"
-          description={`No matches found for "${query}". Try checking your spelling or selecting "All Results".`}
-        />
       ) : (
-        <div className="space-y-2.5">
-          {results.map((r) => (
-            <SearchResultCard key={`${r.type}-${r.id}`} result={r} />
-          ))}
+        /* Empty States */
+        <div className="p-8 sm:p-12 text-center bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl space-y-3">
+          <div className="w-12 h-12 mx-auto rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--accent-primary)]">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
+
+          <h3 className="font-display text-base font-bold text-[var(--text-primary)]">
+            {query.trim()
+              ? `No ${mode === 'restaurants' ? 'restaurants' : 'dishes'} found for "${query}"`
+              : `Search ${mode === 'restaurants' ? 'Restaurants' : 'Food'}`}
+          </h3>
+
+          <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
+            {query.trim()
+              ? 'Try checking for spelling variations, clearing your filters, or switching modes.'
+              : mode === 'restaurants'
+              ? 'Type a restaurant name, locality, or cuisine to find places verified by community diners.'
+              : 'Type a dish name like "Dum Biryani", "Mirchi Bajji", or "Double Ka Meetha" to see ratings and places where it is logged.'}
+          </p>
+
+          {/* Cross-Mode Suggestion */}
+          {query.trim() && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => handleModeSwitch(mode === 'restaurants' ? 'food' : 'restaurants')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent-primary)] text-white text-xs font-semibold hover:bg-[var(--accent-hover)] transition-colors shadow-sm"
+              >
+                <span>
+                  Search {mode === 'restaurants' ? 'Food & Dishes' : 'Restaurants'} for &quot;{query}&quot;
+                </span>
+                <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

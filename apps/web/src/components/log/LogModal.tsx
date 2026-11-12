@@ -30,19 +30,32 @@ interface DishRow {
   dishId?: string;
   name: string;
   rating: number | null;
+  tasteRating?: number | null;
+  portionRating?: number | null;
+  valueRating?: number | null;
+  dietaryTag?: 'veg' | 'egg' | 'non_veg' | null;
+  spiceLevel?: number | null;
   note: string;
+  isSubRatingsOpen?: boolean;
 }
 
 export interface LogModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialData?: Partial<CreateExperienceInput> & { id?: string };
+  initialData?: Partial<CreateExperienceInput> & {
+    id?: string;
+    place_name?: string;
+    dish_name?: string;
+    dish_id?: string;
+  };
 }
 
 export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   const router = useRouter();
   const startTimeRef = useRef<number>(Date.now());
-  const clientRequestIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now());
+  const clientRequestIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now()
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Experience State
@@ -57,6 +70,17 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   const [cuisine, setCuisine] = useState<string>('');
   const [tagsInput, setTagsInput] = useState<string>('');
   const [visibility, setVisibility] = useState<'public' | 'followers' | 'private'>('public');
+
+  // Restaurant 5-Dimension Review State
+  const [placeRatingOverall, setPlaceRatingOverall] = useState<number | null>(null);
+  const [placeRatingFood, setPlaceRatingFood] = useState<number | null>(null);
+  const [placeRatingValue, setPlaceRatingValue] = useState<number | null>(null);
+  const [placeRatingAmbience, setPlaceRatingAmbience] = useState<number | null>(null);
+  const [placeRatingService, setPlaceRatingService] = useState<number | null>(null);
+  const [placeRatingHygiene, setPlaceRatingHygiene] = useState<number | null>(null);
+  const [diningContext, setDiningContext] = useState<'dine_in' | 'takeaway' | 'street_stall' | null>(null);
+  const [wouldReturn, setWouldReturn] = useState<boolean | null>(null);
+  const [isRestaurantReviewOpen, setIsRestaurantReviewOpen] = useState(false);
 
   // Multi-dish state (at least 1 dish)
   const [dishes, setDishes] = useState<DishRow[]>([
@@ -104,13 +128,42 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
             tagsInput,
             visibility,
             dishes,
+            place,
+            placeRatingOverall,
+            placeRatingFood,
+            placeRatingValue,
+            placeRatingAmbience,
+            placeRatingService,
+            placeRatingHygiene,
+            diningContext,
+            wouldReturn,
           };
           localStorage.setItem('mors_draft_experience', JSON.stringify(draft));
         }
       } catch {}
     }, 1000);
     return () => clearTimeout(timeout);
-  }, [isOpen, initialData, title, categorySlug, description, cuisine, priceAmount, tagsInput, visibility, dishes]);
+  }, [
+    isOpen,
+    initialData,
+    title,
+    categorySlug,
+    description,
+    cuisine,
+    priceAmount,
+    tagsInput,
+    visibility,
+    dishes,
+    place,
+    placeRatingOverall,
+    placeRatingFood,
+    placeRatingValue,
+    placeRatingAmbience,
+    placeRatingService,
+    placeRatingHygiene,
+    diningContext,
+    wouldReturn,
+  ]);
 
   const restoreDraft = () => {
     try {
@@ -124,6 +177,15 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
         if (d.priceAmount) setPriceAmount(d.priceAmount);
         if (d.tagsInput) setTagsInput(d.tagsInput);
         if (d.visibility) setVisibility(d.visibility);
+        if (d.place) setPlace(d.place);
+        if (d.placeRatingOverall) setPlaceRatingOverall(d.placeRatingOverall);
+        if (d.placeRatingFood) setPlaceRatingFood(d.placeRatingFood);
+        if (d.placeRatingValue) setPlaceRatingValue(d.placeRatingValue);
+        if (d.placeRatingAmbience) setPlaceRatingAmbience(d.placeRatingAmbience);
+        if (d.placeRatingService) setPlaceRatingService(d.placeRatingService);
+        if (d.placeRatingHygiene) setPlaceRatingHygiene(d.placeRatingHygiene);
+        if (d.diningContext) setDiningContext(d.diningContext);
+        if (d.wouldReturn !== undefined) setWouldReturn(d.wouldReturn);
         if (d.dishes && d.dishes.length > 0) setDishes(d.dishes);
         setHasSavedDraft(false);
       }
@@ -140,7 +202,8 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   useEffect(() => {
     if (isOpen) {
       startTimeRef.current = Date.now();
-      clientRequestIdRef.current = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now();
+      clientRequestIdRef.current =
+        typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'req-' + Date.now();
       getCategories().then((cats) => {
         if (cats && cats.length > 0) setCategories(cats);
       });
@@ -157,6 +220,26 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
         setPriceAmount(initialData.price_amount ? String(initialData.price_amount) : '');
         setTagsInput((initialData.tags || []).join(', '));
         setVisibility(initialData.visibility || 'public');
+
+        // Prepopulate place if provided
+        if (initialData.place_id || initialData.place_name) {
+          setPlace({
+            placeId: initialData.place_id || undefined,
+            name: initialData.place_name || '',
+          });
+        }
+
+        // Prepopulate restaurant reviews
+        if (initialData.place_rating_overall !== undefined) setPlaceRatingOverall(initialData.place_rating_overall);
+        if (initialData.place_rating_food !== undefined) setPlaceRatingFood(initialData.place_rating_food);
+        if (initialData.place_rating_value !== undefined) setPlaceRatingValue(initialData.place_rating_value);
+        if (initialData.place_rating_ambience !== undefined) setPlaceRatingAmbience(initialData.place_rating_ambience);
+        if (initialData.place_rating_service !== undefined) setPlaceRatingService(initialData.place_rating_service);
+        if (initialData.place_rating_hygiene !== undefined) setPlaceRatingHygiene(initialData.place_rating_hygiene);
+        if (initialData.dining_context !== undefined) setDiningContext(initialData.dining_context);
+        if (initialData.would_return !== undefined) setWouldReturn(initialData.would_return);
+
+        // Prepopulate dishes
         if (initialData.dishes && initialData.dishes.length > 0) {
           setDishes(
             initialData.dishes.map((d, i) => ({
@@ -164,9 +247,24 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
               dishId: d.dish_id,
               name: d.display_name,
               rating: d.rating ?? null,
+              tasteRating: d.taste_rating ?? null,
+              portionRating: d.portion_rating ?? null,
+              valueRating: d.value_rating ?? null,
+              dietaryTag: d.dietary_tag ?? null,
+              spiceLevel: d.spice_level ?? null,
               note: d.note || '',
             }))
           );
+        } else if (initialData.dish_name || initialData.dish_id) {
+          setDishes([
+            {
+              id: 'dish-0',
+              dishId: initialData.dish_id,
+              name: initialData.dish_name || '',
+              rating: null,
+              note: '',
+            },
+          ]);
         }
         setIsDetailedOpen(true);
       }
@@ -203,6 +301,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
 
     setIsCompressing(true);
     setErrorMessage(null);
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -214,21 +313,20 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const tempId = `photo-${Date.now()}-${i}`;
+      if (!file) continue;
 
       try {
-        // 1. Client-side compress (max edge 2048px, quality 0.8, strip EXIF)
-        const processed: ProcessedImage = await processImageFile(file, 2048, 0.8);
+        const processed: ProcessedImage = await processImageFile(file);
+        const tempId = `photo-${Date.now()}-${i}`;
+        const ext = 'jpg';
+        const storagePath = `${user.id}/${Date.now()}-${i}.${ext}`;
 
-        const storagePath = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.jpg`;
-
-        // 2. Optimistic photo state
         setPhotos((prev) => [
           ...prev,
           {
             id: tempId,
             storagePath,
-            previewUrl: processed.blurPlaceholder,
+            previewUrl: URL.createObjectURL(processed.blob),
             blurhash: processed.blurPlaceholder,
             width: processed.width,
             height: processed.height,
@@ -236,26 +334,24 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
           },
         ]);
 
-        // 3. Upload to private experience-photos bucket
         const { error: uploadError } = await supabase.storage
           .from('experience-photos')
           .upload(storagePath, processed.blob, {
             contentType: 'image/jpeg',
-            upsert: true,
+            upsert: false,
           });
 
         if (uploadError) {
-          throw uploadError;
+          setErrorMessage(`Failed to upload photo: ${uploadError.message}`);
+          setPhotos((prev) => prev.filter((p) => p.id !== tempId));
+        } else {
+          setPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, isUploading: false } : p))
+          );
         }
-
-        // Mark as uploaded
-        setPhotos((prev) =>
-          prev.map((p) => (p.id === tempId ? { ...p, isUploading: false } : p))
-        );
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Photo upload failed';
+        const msg = err instanceof Error ? err.message : 'Photo processing failed';
         setErrorMessage(msg);
-        setPhotos((prev) => prev.filter((p) => p.id !== tempId));
       }
     }
 
@@ -298,6 +394,11 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
         display_name: d.name.trim(),
         position: index,
         rating: d.rating,
+        taste_rating: d.tasteRating || null,
+        portion_rating: d.portionRating || null,
+        value_rating: d.valueRating || null,
+        dietary_tag: d.dietaryTag || null,
+        spice_level: d.spiceLevel || null,
         note: d.note.trim() || null,
       }));
 
@@ -315,6 +416,8 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
       ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
       : [];
 
+    const hasPlace = Boolean(place.placeId);
+
     const payload: CreateExperienceInput = {
       client_request_id: clientRequestIdRef.current,
       title: title.trim() || null,
@@ -323,6 +426,14 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
       status,
       visibility,
       overall_rating: overallRating,
+      place_rating_overall: hasPlace ? placeRatingOverall : null,
+      place_rating_food: hasPlace ? placeRatingFood : null,
+      place_rating_value: hasPlace ? placeRatingValue : null,
+      place_rating_ambience: hasPlace ? placeRatingAmbience : null,
+      place_rating_service: hasPlace ? placeRatingService : null,
+      place_rating_hygiene: hasPlace ? placeRatingHygiene : null,
+      dining_context: hasPlace ? diningContext : null,
+      would_return: hasPlace ? wouldReturn : null,
       description: description.trim() || null,
       place_id: place.placeId || null,
       price_amount: parsedPrice !== null && !isNaN(parsedPrice) ? parsedPrice : null,
@@ -341,17 +452,10 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
       return;
     }
 
-    // Success: track telemetry duration & close modal
+    // Success: clear local draft and redirect
     try {
       localStorage.removeItem('mors_draft_experience');
     } catch {}
-    const durationSec = Math.round((Date.now() - startTimeRef.current) / 1000);
-    console.info(`[Telemetry] log_${status}`, {
-      durationSec,
-      mode: isDetailedOpen ? 'detailed' : 'quick',
-      photosCount: photos.length,
-      dishesCount: dishesPayload.length,
-    });
 
     onClose();
     if (result.experienceId) {
@@ -362,19 +466,29 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Log Food Experience" maxWidth="xl">
-      <div className="space-y-6">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData?.id ? 'Edit Experience' : 'Log Food Experience'}
+      maxWidth="lg"
+    >
+      <div className="space-y-6 pt-2">
         {errorMessage && (
-          <div className="rounded-xl border border-[var(--semantic-error)]/30 bg-[var(--semantic-error)]/10 p-3.5 text-xs text-[var(--semantic-error)]">
-            {errorMessage}
+          <div className="rounded-xl border border-[var(--semantic-error)]/40 bg-[var(--semantic-error)]/10 p-3.5 text-xs text-[var(--semantic-error)] flex items-center justify-between">
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="font-bold hover:underline"
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        {hasSavedDraft && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 p-3 text-xs">
-            <span className="text-[var(--text-primary)]">
-              Found an unsaved draft from a previous session.
-            </span>
+        {hasSavedDraft && !initialData && (
+          <div className="flex items-center justify-between rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-subtle)]/30 p-3 text-xs">
+            <span className="text-[var(--text-secondary)]">You have an unsaved local draft.</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -422,6 +536,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
                       type="button"
                       onClick={() => handleMovePhoto(index, 'left')}
                       className="text-xs text-white hover:text-[var(--accent-primary)]"
+                      aria-label="Move photo left"
                     >
                       ◀
                     </button>
@@ -430,6 +545,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
                     type="button"
                     onClick={() => handleRemovePhoto(p.id)}
                     className="text-xs text-[var(--semantic-error)] font-bold hover:scale-110"
+                    aria-label="Remove photo"
                   >
                     ✕
                   </button>
@@ -438,6 +554,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
                       type="button"
                       onClick={() => handleMovePhoto(index, 'right')}
                       className="text-xs text-white hover:text-[var(--accent-primary)]"
+                      aria-label="Move photo right"
                     >
                       ▶
                     </button>
@@ -451,17 +568,14 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isCompressing}
-                className="flex h-20 w-20 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-primary)] hover:border-[var(--accent-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-surface)] text-xs text-[var(--text-muted)] hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)]"
               >
                 {isCompressing ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--accent-primary)] border-t-transparent" />
+                  <span className="text-[10px]">Compressing...</span>
                 ) : (
                   <>
-                    <svg className="w-5 h-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-                    </svg>
-                    <span className="text-[10px] font-medium">+ Add</span>
+                    <span className="text-xl">+</span>
+                    <span className="text-[10px]">Add Photo</span>
                   </>
                 )}
               </button>
@@ -470,7 +584,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,image/heic"
             multiple
             className="hidden"
             onChange={handlePhotoSelect}
@@ -484,6 +598,7 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
           </label>
           <DishCombobox
             value={dishes[0]?.name || ''}
+            dishId={dishes[0]?.dishId}
             onChange={(selected) =>
               handleDishChange(0, { name: selected.name, dishId: selected.dishId })
             }
@@ -491,18 +606,27 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
           />
         </div>
 
-        {/* 3. Primary Rating */}
+        {/* 3. Overall Meal Rating (Independent of individual dish scores) */}
         <div>
-          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
-            Rating (optional)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+              Overall Meal Rating (optional)
+            </label>
+            <span className="text-[10px] text-[var(--text-muted)]">
+              Occasion score (0.5 to 5.0)
+            </span>
+          </div>
           <RatingStars
-            value={dishes[0]?.rating ?? overallRating}
+            value={overallRating}
             onChange={(newRating) => {
-              handleDishChange(0, { rating: newRating });
               setOverallRating(newRating);
+              // In quick log, if primary dish has no rating yet, default it for speed
+              if (!isDetailedOpen && dishes[0] && dishes[0].rating === null) {
+                handleDishChange(0, { rating: newRating });
+              }
             }}
             size="md"
+            label="Overall meal occasion rating"
           />
         </div>
 
@@ -511,9 +635,9 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
           <button
             type="button"
             onClick={() => setIsDetailedOpen(!isDetailedOpen)}
-            className="flex w-full items-center justify-between text-xs font-semibold text-[var(--accent-primary)] hover:underline"
+            className="flex w-full items-center justify-between text-xs font-semibold text-[var(--accent-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] rounded py-1"
           >
-            <span>{isDetailedOpen ? '− Fewer details' : '+ Add details (place, notes, more dishes, price...)'}</span>
+            <span>{isDetailedOpen ? '− Fewer details' : '+ Add details (restaurant review, sub-ratings, more dishes, price...)'}</span>
             <span>{isDetailedOpen ? '▲' : '▼'}</span>
           </button>
         </div>
@@ -566,7 +690,154 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
               />
             </div>
 
-            {/* Additional Dishes (Multi-dish meal) */}
+            {/* 5-Dimension Restaurant Review (Only enabled when place is selected) */}
+            {place.placeId && (
+              <div className="rounded-xl border border-[var(--accent-primary)]/30 bg-[var(--accent-subtle)]/15 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-xs font-bold text-[var(--text-primary)]">
+                      Restaurant Scorecard Review
+                    </span>
+                    <p className="text-[11px] text-[var(--text-secondary)]">
+                      Rate the venue on 5 distinct community dimensions.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsRestaurantReviewOpen(!isRestaurantReviewOpen)}
+                    className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
+                  >
+                    {isRestaurantReviewOpen ? 'Hide Scorecard' : 'Open Scorecard'}
+                  </button>
+                </div>
+
+                {isRestaurantReviewOpen && (
+                  <div className="space-y-4 pt-3 border-t border-[var(--border-subtle)]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Food Quality
+                        </label>
+                        <RatingStars
+                          value={placeRatingFood}
+                          onChange={setPlaceRatingFood}
+                          size="sm"
+                          label="Food quality rating"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Value for Money
+                        </label>
+                        <RatingStars
+                          value={placeRatingValue}
+                          onChange={setPlaceRatingValue}
+                          size="sm"
+                          label="Value for money rating"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Ambience
+                        </label>
+                        <RatingStars
+                          value={placeRatingAmbience}
+                          onChange={setPlaceRatingAmbience}
+                          size="sm"
+                          label="Ambience rating"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Service
+                        </label>
+                        <RatingStars
+                          value={placeRatingService}
+                          onChange={setPlaceRatingService}
+                          size="sm"
+                          label="Service rating"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Hygiene
+                        </label>
+                        <RatingStars
+                          value={placeRatingHygiene}
+                          onChange={setPlaceRatingHygiene}
+                          size="sm"
+                          label="Hygiene rating"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1">
+                          Overall Restaurant Score
+                        </label>
+                        <RatingStars
+                          value={placeRatingOverall}
+                          onChange={setPlaceRatingOverall}
+                          size="sm"
+                          label="Overall restaurant review rating"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Context & Return intent */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                          Dining Context
+                        </label>
+                        <div className="flex gap-1.5">
+                          {(
+                            [
+                              { val: 'dine_in', label: 'Dine In' },
+                              { val: 'takeaway', label: 'Takeaway' },
+                              { val: 'street_stall', label: 'Street Stall' },
+                            ] as const
+                          ).map(({ val, label }) => (
+                            <Chip
+                              key={val}
+                              label={label}
+                              selected={diningContext === val}
+                              onClick={() => setDiningContext(diningContext === val ? null : val)}
+                              size="sm"
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-[var(--text-secondary)] mb-1.5">
+                          Would You Return?
+                        </label>
+                        <div className="flex gap-2">
+                          <Chip
+                            label="Yes, absolutely"
+                            selected={wouldReturn === true}
+                            onClick={() => setWouldReturn(wouldReturn === true ? null : true)}
+                            size="sm"
+                          />
+                          <Chip
+                            label="No"
+                            selected={wouldReturn === false}
+                            onClick={() => setWouldReturn(wouldReturn === false ? null : false)}
+                            size="sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Additional Dishes (Multi-dish meal with Sub-Ratings) */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold text-[var(--text-secondary)]">
@@ -584,20 +855,37 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
               {dishes.map((dish, idx) => (
                 <div
                   key={dish.id}
-                  className="space-y-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3"
+                  className="space-y-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-mono text-[var(--text-muted)]">#{idx + 1}</span>
-                    {idx > 0 && (
+                    <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
+                      Dish #{idx + 1}
+                    </span>
+                    <div className="flex items-center gap-3">
                       <button
                         type="button"
-                        onClick={() => handleRemoveDish(idx)}
-                        className="text-xs text-[var(--semantic-error)] hover:underline"
+                        onClick={() =>
+                          handleDishChange(idx, {
+                            isSubRatingsOpen: !dish.isSubRatingsOpen,
+                          })
+                        }
+                        className="text-[11px] text-[var(--accent-primary)] hover:underline"
                       >
-                        Remove
+                        {dish.isSubRatingsOpen ? 'Hide Sub-ratings' : '+ Taste, Portion, Spice'}
                       </button>
-                    )}
+
+                      {idx > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDish(idx)}
+                          className="text-xs text-[var(--semantic-error)] hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
                   </div>
+
                   <DishCombobox
                     value={dish.name}
                     dishId={dish.dishId}
@@ -606,21 +894,126 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
                     }
                     placeholder={`Dish #${idx + 1} name`}
                   />
-                  <div className="flex items-center gap-4">
-                    <RatingStars
-                      value={dish.rating}
-                      onChange={(r) => handleDishChange(idx, { rating: r })}
-                      size="sm"
-                      label={`Rating for dish ${idx + 1}`}
-                    />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-[var(--text-muted)]">Dish Score:</span>
+                      <RatingStars
+                        value={dish.rating}
+                        onChange={(r) => handleDishChange(idx, { rating: r })}
+                        size="sm"
+                        label={`Rating for dish ${idx + 1}`}
+                      />
+                    </div>
+
                     <input
                       type="text"
                       placeholder="Dish note (e.g. extra spicy, crispy)"
                       value={dish.note}
                       onChange={(e) => handleDishChange(idx, { note: e.target.value })}
-                      className="flex-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+                      className="flex-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-primary)] px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
                     />
                   </div>
+
+                  {/* Dish Sub-ratings (Taste, Portion, Value, Dietary, Spice) */}
+                  {dish.isSubRatingsOpen && (
+                    <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]/50 p-3 rounded-lg">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                            Taste & Flavor
+                          </label>
+                          <RatingStars
+                            value={dish.tasteRating ?? null}
+                            onChange={(r) => handleDishChange(idx, { tasteRating: r })}
+                            size="sm"
+                            label="Dish taste rating"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                            Portion Size
+                          </label>
+                          <RatingStars
+                            value={dish.portionRating ?? null}
+                            onChange={(r) => handleDishChange(idx, { portionRating: r })}
+                            size="sm"
+                            label="Dish portion rating"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                            Value for Money
+                          </label>
+                          <RatingStars
+                            value={dish.valueRating ?? null}
+                            onChange={(r) => handleDishChange(idx, { valueRating: r })}
+                            size="sm"
+                            label="Dish value rating"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                        <div>
+                          <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                            Dietary Tag
+                          </label>
+                          <div className="flex gap-1.5">
+                            {(
+                              [
+                                { val: 'veg', label: 'Vegetarian' },
+                                { val: 'egg', label: 'Egg' },
+                                { val: 'non_veg', label: 'Non-Veg' },
+                              ] as const
+                            ).map(({ val, label }) => (
+                              <Chip
+                                key={val}
+                                label={label}
+                                selected={dish.dietaryTag === val}
+                                onClick={() =>
+                                  handleDishChange(idx, {
+                                    dietaryTag: dish.dietaryTag === val ? null : val,
+                                  })
+                                }
+                                size="sm"
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-[var(--text-secondary)] mb-1">
+                            Spice Level
+                          </label>
+                          <div className="flex gap-1.5">
+                            {(
+                              [
+                                { val: 1, label: '1 Mild' },
+                                { val: 2, label: '2 Med' },
+                                { val: 3, label: '3 Hot' },
+                                { val: 4, label: '4 Extra' },
+                              ] as const
+                            ).map(({ val, label }) => (
+                              <Chip
+                                key={val}
+                                label={label}
+                                selected={dish.spiceLevel === val}
+                                onClick={() =>
+                                  handleDishChange(idx, {
+                                    spiceLevel: dish.spiceLevel === val ? null : val,
+                                  })
+                                }
+                                size="sm"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -686,9 +1079,9 @@ export function LogModal({ isOpen, onClose, initialData }: LogModalProps) {
               <div className="flex gap-2">
                 {(
                   [
-                    { val: 'public', label: '🌍 Public' },
-                    { val: 'followers', label: '👥 Followers only' },
-                    { val: 'private', label: '🔒 Private' },
+                    { val: 'public', label: 'Public' },
+                    { val: 'followers', label: 'Followers only' },
+                    { val: 'private', label: 'Private' },
                   ] as const
                 ).map(({ val, label }) => (
                   <Chip

@@ -3,7 +3,7 @@
 Keep this file short. Detail lives in `docs/IMPLEMENTATION_PLAN.md` (spec) and `docs/PHASES.md` (phase tasks). If anything here contradicts those, STOP and ask.
 
 ## Product
-MORS is a social food journal: a personal, searchable archive of someone's whole food life plus a community around taste. It is NOT a delivery app, booking platform, calorie tracker, or restaurant-review site.
+MORS is a social food journal and community-powered restaurant and dish discovery platform: a personal, searchable archive of someone's whole food life plus a community around taste. It is NOT a delivery app, booking platform, or calorie tracker.
 Central object: FOOD EXPERIENCE (one eating occasion) containing 1+ dishes. Place is always optional. Home-cooked food is first-class.
 Every feature must serve one of: (1) effortless logging, (2) meaningful personal history, (3) genuine social discovery.
 Journey: Eat -> Log -> Rate -> Remember -> Collect -> Share -> Discover.
@@ -22,7 +22,7 @@ Before using any Next.js, Supabase SSR, Tailwind or Expo API, read the CURRENT o
 6. Hidden and nonexistent look identical: return "not found", never "forbidden".
 7. Service-role key is server-only, never in client code, NEXT_PUBLIC_*, or mobile. Service-role use is limited to Edge Functions and one audited server module; photo signing does NOT need it (storage policy calls can_view_experience).
 8. Views use `security_invoker = true`. SECURITY DEFINER functions set `search_path = ''` and schema-qualify everything. Use `(select auth.uid())` in policies.
-9. Ratings are smallint half-stars 1..10 (UI 0.5..5.0). A user's own rating and community aggregate are different things.
+9. Ratings are smallint half-stars 1..10 (UI 0.5..5.0) for overall meal, 5-dimension restaurant reviews (food_quality, value_for_money, ambience, service, hygiene), and 3-dimension dish sub-ratings (taste, portion, value). A user's own rating and community aggregate are different things. Never conflate restaurant ratings with dish ratings.
 10. "Public pool" = published AND visibility public AND owner profile public AND owner discoverable AND owner not pending deletion. Community aggregates, global search, dish/place public lists and Explore use ONLY the public pool. Aggregates are trigger-maintained tables, never viewer-dependent views.
 11. Dishes/places are reference data but start UNLISTED (visible only to creator) until used by a public-pool entry or curated. `created_by` is never exposed to clients.
 12. Strip EXIF/GPS from photos. No precise location or real-time eating activity without explicit consent.

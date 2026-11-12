@@ -1,0 +1,10 @@
+.turbo
+.next
+node_modules
+supabase/.branches
+supabase/.temp
+vibe-janitor
+reports
+docs
+tests
+.git

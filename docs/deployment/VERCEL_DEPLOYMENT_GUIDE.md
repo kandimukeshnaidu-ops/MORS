@@ -28,7 +28,7 @@ Because Vercel runs on cloud edge servers, it cannot reach your local laptop's D
 3. Click **Import**.
 4. In the **Configure Project** screen:
    - **Framework Preset**: Next.js (automatically detected)
-   - **Root Directory**: Leave as `./` (automatically handled by `vercel.json` and Turborepo)
+   - **Root Directory**: Click **Edit** and set to `apps/web` (check the box **"Include source files outside of the Root Directory in the Build Step"**). This is required for Next.js Turborepo monorepos so Vercel locates `.next` correctly.
 5. Expand **Environment Variables** and add the following 5 variables:
 
 | Variable | Value | Description |
@@ -64,7 +64,27 @@ Because Vercel runs on cloud edge servers, it cannot reach your local laptop's D
 
 ---
 
-## 3. Post-Deployment Verification Checklist
+## 3. Troubleshooting Common Deployment Issues
+
+### Issue 1: `Error: [NEXT_OUTPUT_DIR_MISSING] The Next.js output directory was not found`
+- **Cause**: Vercel's **Root Directory** was left as `./`. Because MORS is a Turborepo monorepo, Next.js outputs its build artifacts to `apps/web/.next`, but Vercel looked at the repository root.
+- **Fix**:
+  1. In Vercel, open your project (`mors`).
+  2. Navigate to **Settings** -> **General**.
+  3. Under **Root Directory**, click **Edit**.
+  4. Change from `./` to `apps/web`.
+  5. Ensure **"Include source files outside of the Root Directory in the Build Step"** is **checked**.
+  6. Click **Save**.
+  7. Go to **Deployments** -> click `...` on your latest deployment -> click **Redeploy**.
+
+### Issue 2: `This project already has an existing environment variable with name NEXT_PUBLIC_SUPABASE_URL` in the Supabase Integration modal
+- **Cause**: You already manually configured `NEXT_PUBLIC_SUPABASE_URL` under Vercel **Settings** -> **Environment Variables**, so Vercel blocks the Supabase integration modal from overwriting it.
+- **Fix**:
+  - Simply click **Skip** on the "Install Integration" modal! The Supabase integration is optional. As long as your 5 environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `APP_ENV`) are added in **Project Settings -> Environment Variables**, MORS connects seamlessly to Supabase.
+
+---
+
+## 4. Post-Deployment Verification Checklist
 - [ ] Visit `https://<your-app>.vercel.app` (home page renders dark charcoal UI).
 - [ ] Navigate to `/auth/register`:
   - Enter beta code `HYDERABAD-BETA-2026`.

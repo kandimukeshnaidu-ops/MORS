@@ -4,6 +4,7 @@ import { AppShell } from '@/components/shell/AppShell';
 import { Avatar } from '@/components/ui/Avatar';
 import { FollowButton } from '@/components/social/FollowButton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { RegionalRankingBoard } from '@/components/explore/RegionalRankingBoard';
 import { getExploreData } from './actions';
 
 export const metadata: Metadata = {
@@ -30,6 +31,11 @@ export default async function ExplorePage() {
             Time-decayed trending meals, community collections, and cook profiles.
           </p>
         </header>
+
+        {/* Regional Ranking Leaderboard (Phase 3) */}
+        <section>
+          <RegionalRankingBoard />
+        </section>
 
         {/* 1. Trending Experiences */}
         <section className="space-y-4">

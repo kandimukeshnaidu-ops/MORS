@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import type { PersonalTasteIdentity } from '@mors/db';
 import { getPublicCollections, type CollectionSummary } from '@/app/collections/actions';
 import { getSignedPhotoUrls } from '@/app/log/actions';
 
@@ -143,4 +144,37 @@ export async function getFoodYearData(targetUserId: string, year = 2026): Promis
 
   if (error || !data) return null;
   return data as FoodYearRecap;
+}
+
+/**
+ * MORS 2.0 Phase 5: Retrieves structured Personal Taste Identity for authenticated user
+ * or shared public taste profile of target user.
+ */
+export async function getPersonalTasteIdentity(targetUserId?: string): Promise<PersonalTasteIdentity | null> {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const viewerId = authData?.user?.id || null;
+
+  const { data, error } = await supabase.rpc('get_personal_taste_identity', {
+    p_user_id: targetUserId || viewerId,
+    p_viewer_id: viewerId,
+  });
+
+  if (error || !data) return null;
+  return data as PersonalTasteIdentity;
+}
+
+/**
+ * MORS 2.0 Phase 5: Toggles personal taste profile sharing opt-in.
+ */
+export async function setTasteProfileSharing(enabled: boolean): Promise<boolean> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('set_taste_profile_sharing', {
+    p_enabled: enabled,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return !!data;
 }

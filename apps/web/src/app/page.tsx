@@ -11,7 +11,7 @@ import { PeopleToFollow } from '@/components/social/PeopleToFollow';
 import { FOOD_CATEGORIES } from '@mors/domain';
 import {
   getHomeFeed,
-  getSuggestedUsers,
+  getTasteAlignedProfiles,
   type FeedItem,
   type SuggestedProfile,
 } from '@/app/social/actions';
@@ -37,7 +37,7 @@ export default function HomePage() {
 
   useEffect(() => {
     loadFeed();
-    getSuggestedUsers(4).then(setSuggestedProfiles);
+    getTasteAlignedProfiles(4).then(setSuggestedProfiles);
   }, [loadFeed]);
 
   const handleLoadMore = async () => {
@@ -136,6 +136,9 @@ export default function HomePage() {
                     name: d.name,
                     rating: d.rating || undefined,
                   }))}
+                  likesCount={exp.likesCount}
+                  commentsCount={exp.commentsCount}
+                  isLikedByViewer={exp.isLikedByViewer}
                 />
               </div>
             ))

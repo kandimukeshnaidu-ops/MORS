@@ -29,6 +29,8 @@ pnpm-debug.log*
 coverage/
 reports/janitor-*
 vibe-janitor-report/
+playwright-report/
+test-results/
 
 # OS files
 .DS_Store

@@ -16,14 +16,18 @@ export interface FeedItem {
   id: string;
   title: string | null;
   categorySlug: string;
+  cuisine?: string | null;
   eatenAt: string;
   publishedAt: string;
   overallRating: number | null;
   description: string | null;
   placeName: string | null;
   author: FeedAuthor;
-  dishes: Array<{ name: string; rating: number | null }>;
+  dishes: Array<{ name: string; rating: number | null; tasteRating?: number | null }>;
   primaryPhotoUrl: string | null;
+  likesCount?: number;
+  commentsCount?: number;
+  isLikedByViewer?: boolean;
 }
 
 export interface SuggestedProfile {
@@ -34,10 +38,52 @@ export interface SuggestedProfile {
   bio: string | null;
   experiencesCount: number;
   followersCount: number;
+  matchReason?: string | null;
+}
+
+interface RawFeedV2Item {
+  id: string;
+  title: string | null;
+  category_slug: string;
+  cuisine: string | null;
+  eaten_at: string;
+  published_at: string;
+  visibility: string;
+  overall_rating: number | null;
+  description: string | null;
+  author: {
+    id: string;
+    username: string;
+    display_name: string | null;
+    avatar_path: string | null;
+  };
+  place: {
+    id: string;
+    name: string;
+    city: string | null;
+  } | null;
+  dishes: Array<{
+    display_name: string;
+    rating: number | null;
+    taste_rating?: number | null;
+  }>;
+  primary_photo_path: string | null;
+  likes_count: number;
+  comments_count: number;
+  is_liked_by_viewer: boolean;
+}
+
+interface FeedV2Response {
+  items: RawFeedV2Item[];
+  next_cursor: {
+    published_at: string;
+    id: string;
+  } | null;
 }
 
 /**
- * Keyset-paginated chronological home feed.
+ * Keyset-paginated chronological home feed powered by get_home_feed_v2 RPC.
+ * Eliminates N+1 database queries and natively includes likes, comments, and dishes.
  */
 export async function getHomeFeed(
   cursor?: { publishedAt: string; id: string } | null,
@@ -45,123 +91,69 @@ export async function getHomeFeed(
 ): Promise<{ items: FeedItem[]; nextCursor: { publishedAt: string; id: string } | null }> {
   const supabase = await createClient();
 
-  const { data: rows, error } = await supabase.rpc('get_home_feed', {
+  const { data, error } = await supabase.rpc('get_home_feed_v2', {
     p_cursor_published_at: cursor?.publishedAt || null,
     p_cursor_id: cursor?.id || null,
-    p_limit: limit + 1,
+    p_limit: limit,
   });
 
-  if (error || !rows) {
+  if (error || !data) {
     console.error('getHomeFeed error:', error);
     return { items: [], nextCursor: null };
   }
 
-  const hasNextPage = rows.length > limit;
-  const pageRecords = hasNextPage ? rows.slice(0, limit) : rows;
+  const payload = data as unknown as FeedV2Response;
+  const rawItems = payload.items || [];
+  const nextCursorRaw = payload.next_cursor;
 
-  const nextCursor =
-    hasNextPage && pageRecords.length > 0
-      ? {
-          publishedAt: pageRecords[pageRecords.length - 1].published_at,
-          id: pageRecords[pageRecords.length - 1].id,
-        }
-      : null;
-
-  if (pageRecords.length === 0) {
+  if (rawItems.length === 0) {
     return { items: [], nextCursor: null };
   }
 
-  const expIds = pageRecords.map((r) => r.id);
-  const authorIds = Array.from(new Set(pageRecords.map((r) => r.user_id)));
-  const placeIds = Array.from(new Set(pageRecords.map((r) => r.place_id).filter(Boolean))) as string[];
-
-  // 1. Fetch authors
-  const { data: authorsData } = await supabase
-    .from('profiles')
-    .select('id, username, display_name, avatar_path')
-    .in('id', authorIds);
-
-  const authorMap: Record<string, FeedAuthor> = {};
-  const avatarPaths: string[] = [];
-
-  for (const a of authorsData || []) {
-    authorMap[a.id] = {
-      id: a.id,
-      username: a.username,
-      displayName: a.display_name,
-      avatarPath: a.avatar_path,
-      avatarUrl: null,
-    };
-    if (a.avatar_path) avatarPaths.push(a.avatar_path);
-  }
-
-  // 2. Fetch places
-  const placeMap: Record<string, string> = {};
-  if (placeIds.length > 0) {
-    const { data: placesData } = await supabase
-      .from('places')
-      .select('id, name')
-      .in('id', placeIds);
-
-    for (const pl of placesData || []) {
-      placeMap[pl.id] = pl.name;
-    }
-  }
-
-  // 3. Fetch dishes
-  const { data: dishesData } = await supabase
-    .from('experience_dishes')
-    .select('experience_id, display_name, rating, position')
-    .in('experience_id', expIds)
-    .order('position', { ascending: true });
-
-  const dishesMap: Record<string, Array<{ name: string; rating: number | null }>> = {};
-  for (const d of dishesData || []) {
-    if (!dishesMap[d.experience_id]) dishesMap[d.experience_id] = [];
-    dishesMap[d.experience_id].push({ name: d.display_name, rating: d.rating });
-  }
-
-  // 4. Fetch primary photos
-  const { data: photosData } = await supabase
-    .from('experience_photos')
-    .select('experience_id, storage_path, position')
-    .in('experience_id', expIds)
-    .order('position', { ascending: true });
-
-  const primaryPhotoMap: Record<string, string> = {};
+  // Collect photo paths that need signing
   const photoPaths: string[] = [];
-  for (const p of photosData || []) {
-    if (!primaryPhotoMap[p.experience_id]) {
-      primaryPhotoMap[p.experience_id] = p.storage_path;
-      photoPaths.push(p.storage_path);
+  for (const item of rawItems) {
+    if (item.primary_photo_path) {
+      photoPaths.push(item.primary_photo_path);
     }
   }
 
   const signedPhotos = photoPaths.length > 0 ? await getSignedPhotoUrls(photoPaths) : {};
 
-  // Construct items
-  const items: FeedItem[] = pageRecords.map((r) => {
-    const photoPath = primaryPhotoMap[r.id];
-    return {
-      id: r.id,
-      title: r.title,
-      categorySlug: r.category_slug,
-      eatenAt: r.eaten_at,
-      publishedAt: r.published_at,
-      overallRating: r.overall_rating,
-      description: r.description,
-      placeName: r.place_id ? placeMap[r.place_id] || null : null,
-      author: authorMap[r.user_id] || {
-        id: r.user_id,
-        username: 'unknown',
-        displayName: null,
-        avatarPath: null,
-        avatarUrl: null,
-      },
-      dishes: dishesMap[r.id] || [],
-      primaryPhotoUrl: photoPath ? signedPhotos[photoPath] || null : null,
-    };
-  });
+  const items: FeedItem[] = rawItems.map((r) => ({
+    id: r.id,
+    title: r.title,
+    categorySlug: r.category_slug,
+    cuisine: r.cuisine,
+    eatenAt: r.eaten_at,
+    publishedAt: r.published_at,
+    overallRating: r.overall_rating,
+    description: r.description,
+    placeName: r.place?.name || null,
+    author: {
+      id: r.author.id,
+      username: r.author.username,
+      displayName: r.author.display_name,
+      avatarPath: r.author.avatar_path,
+      avatarUrl: null,
+    },
+    dishes: (r.dishes || []).map((d) => ({
+      name: d.display_name,
+      rating: d.rating,
+      tasteRating: d.taste_rating,
+    })),
+    primaryPhotoUrl: r.primary_photo_path ? signedPhotos[r.primary_photo_path] || null : null,
+    likesCount: r.likes_count,
+    commentsCount: r.comments_count,
+    isLikedByViewer: r.is_liked_by_viewer,
+  }));
+
+  const nextCursor = nextCursorRaw
+    ? {
+        publishedAt: nextCursorRaw.published_at,
+        id: nextCursorRaw.id,
+      }
+    : null;
 
   return { items, nextCursor };
 }
@@ -292,4 +284,40 @@ export async function getSuggestedUsers(limit = 5): Promise<SuggestedProfile[]> 
     experiencesCount: p.experiences_count,
     followersCount: p.followers_count,
   }));
+}
+
+/**
+ * Retrieves taste-aligned creators based on mutual high-rated dishes & cuisines.
+ * Falls back to general suggested creators if no mutual matches are found or viewer is logged out.
+ */
+export async function getTasteAlignedProfiles(limit = 5): Promise<SuggestedProfile[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('get_taste_aligned_profiles', {
+    p_limit: limit,
+  });
+
+  if (!error && data && data.length > 0) {
+    return data.map((p) => {
+      const mutualCount = Number(p.mutual_dishes_count);
+      const cuisine = p.match_cuisine || 'local dishes';
+      const reason = mutualCount > 0
+        ? `Shared taste in ${cuisine} • ${mutualCount} mutual favorite${mutualCount > 1 ? 's' : ''}`
+        : `Shared taste in ${cuisine}`;
+
+      return {
+        id: p.candidate_id,
+        username: p.c_username,
+        displayName: p.c_display_name,
+        avatarUrl: null,
+        bio: p.c_bio,
+        experiencesCount: 0,
+        followersCount: 0,
+        matchReason: reason,
+      };
+    });
+  }
+
+  // Graceful fallback to suggested profiles
+  return getSuggestedUsers(limit);
 }

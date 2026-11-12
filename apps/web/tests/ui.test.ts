@@ -316,4 +316,37 @@ describe('Rating and UI Calculations', () => {
     expect(canAccessDiaryAndExport(downgradedFree)).toBe(true);
     expect(isDataPreservedOnDowngrade(activePlus, downgradedFree)).toBe(true);
   });
+
+  it('formats Phase 2 Find restaurant result cards cleanly with multi-dimensional scores', () => {
+    const restaurant = {
+      name: 'Bawarchi Restaurant',
+      ratingAvg: 9, // 4.5/5.0
+      ratingCount: 14,
+      foodQualityAvg: 10, // 5.0/5.0
+      valueAvg: 8, // 4.0/5.0
+      wouldReturnPct: 92,
+    };
+
+    expect(formatRating(restaurant.ratingAvg)).toBe('4.5★');
+    expect(formatRating(restaurant.foodQualityAvg)).toBe('5.0★');
+    expect(formatRating(restaurant.valueAvg)).toBe('4.0★');
+    expect(restaurant.wouldReturnPct).toBe(92);
+  });
+
+  it('formats Phase 2 Find food result cards with top community places and sub-ratings', () => {
+    const dish = {
+      name: 'Hyderabadi Haleem',
+      ratingAvg: 9.2,
+      ratingCount: 45,
+      tasteAvg: 9.6,
+      topPlaces: [
+        { place_id: 'p1', place_name: 'Pista House', city: 'Hyderabad', logs_count: 28 },
+        { place_id: 'p2', place_name: 'Sarvi', city: 'Hyderabad', logs_count: 17 },
+      ],
+    };
+
+    expect(dish.topPlaces.length).toBe(2);
+    expect(dish.topPlaces[0].place_name).toBe('Pista House');
+    expect(dish.topPlaces[0].logs_count).toBe(28);
+  });
 });

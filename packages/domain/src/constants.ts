@@ -30,6 +30,43 @@ export const RATING_LIMITS = {
   STEP: 0.5,
 } as const;
 
+export const RESTAURANT_RATING_DIMENSIONS = [
+  'food_quality',
+  'value_for_money',
+  'ambience',
+  'service',
+  'hygiene',
+] as const;
+export type RestaurantRatingDimension = (typeof RESTAURANT_RATING_DIMENSIONS)[number];
+
+export const DISH_RATING_DIMENSIONS = [
+  'taste',
+  'portion',
+  'value',
+] as const;
+export type DishRatingDimension = (typeof DISH_RATING_DIMENSIONS)[number];
+
+export const DINING_CONTEXTS = ['dine_in', 'takeaway', 'street_stall'] as const;
+export type DiningContext = (typeof DINING_CONTEXTS)[number];
+
+export const DIETARY_TAGS = ['veg', 'egg', 'non_veg'] as const;
+export type DietaryTag = (typeof DIETARY_TAGS)[number];
+
+export const SPICE_LEVELS = {
+  MIN: 1,
+  MAX: 4,
+} as const;
+
+export const RANKING_THRESHOLDS = {
+  MIN_RATINGS_FOR_RANKED: 3,
+  MIN_RATINGS_FOR_EMERGING: 1,
+  DEFAULT_CONFIDENCE_CONSTANT: 5,
+  DEFAULT_PRIOR_MEAN: 7.0, // 3.5 out of 5 stars on 1..10 scale
+} as const;
+
+export const RANKING_TIERS = ['ranked', 'emerging', 'unranked'] as const;
+export type RankingTier = (typeof RANKING_TIERS)[number];
+
 export const PHOTO_LIMITS = {
   MAX_COUNT: 10,
   MAX_DIMENSION: 2048,

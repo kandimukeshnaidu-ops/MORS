@@ -26,6 +26,18 @@ This file records product and architectural decisions per `docs/IMPLEMENTATION_P
 | **20** | Map tiles & geocoding provider | Commercial or self-hosted tiles with MapLibre | Compliance with public OSM tile and Nominatim usage limits. |
 | **21** | Viewer stats privacy | Public-pool stats only | Simpler, mathematically provable safety against follower de-anonymization. |
 | **22** | Food Year recap launch timing | Decided by data volume at year end | Ensures meaningful retrospectives with sufficient logged occasions. |
+| **23 (D0-01)** | Product positioning update (MORS 2.0) | Social food journal + restaurant & dish discovery | Preserves food journal and home-cooked first-class status while enabling trustworthy restaurant/dish discovery in Hyderabad. |
+| **24 (D0-02)** | Restaurant review storage location | Direct columns on `public.food_experiences` | Avoids redundant join/table overhead; reuses atomic `can_view_experience` RLS and lifecycle. Columns are strictly NULL when `place_id IS NULL`. |
+| **25 (D0-03)** | Universal rating scale standard | `smallint 1..10` (UI `0.5..5.0` half-stars) | Prevents scale conversion bugs; uniformly applies to overall meal, 5 restaurant dimensions, and 3 dish sub-dimensions. |
+| **26 (D0-04)** | Restaurant overall rating derivation | Average of rated dimensions or explicit | Supports quick log and detailed 5-dimension reviews backwards-compatibly. |
+| **27 (D0-05)** | Dish sub-ratings & metadata | Columns on `public.experience_dishes` | Adds `taste_rating`, `portion_rating`, `value_rating`, `price_amount`, `dietary_tag`, `spice_level`. |
+| **28 (D0-06)** | Brand vs branch hierarchy | Physical branches distinct in `public.places` | Physical outlets have distinct `area_name` and stats, linked to brand parent via `parent_place_id`. |
+| **29 (D0-07)** | Minimum consensus threshold | `>= 3` distinct public-pool reviewers | Protects cook and small-business privacy; prevents single-user skew. Shows "Early consensus" badge for dish-at-place when `< 3`. |
+| **30 (D0-08)** | Discovery navigation architecture | Unified `Find` hub with dual intent | Dual tabs: `Find Food (Dishes)` and `Find Restaurants (Places)`, preserving `/explore` for editorial & tastemakers. |
+| **31 (D0-09)** | Restaurant place URLs | Dual UUID and slug resolution | Supports SEO slugs (`/place/shah-ghouse-tolichowki`) without breaking existing UUID links. |
+| **32 (D0-10)** | Unlisted dishes & places RLS | Creator-only read via RLS | `is_listed = true OR created_by = auth.uid() OR is_admin` enforced in Postgres RLS and all search RPCs. |
+| **33 (D0-11)** | Per-user repeat visit weighting | Per-user mean in public consensus | Neutralizes single-user spam/brigading while preserving total visit counts. |
+| **34 (D0-12)** | Geographic focus for launch | Hyderabad beta anchor + neighborhood pills | Anchors beta on Hyderabad culinary culture while preserving multi-city schema foundation. |
 
 ---
 

@@ -10,7 +10,7 @@ import { Chip } from '@/components/ui/Chip';
 import { ExperienceCard } from '@/components/ui/ExperienceCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TasteStatsCard } from '@/components/profile/TasteStatsCard';
-import { getProfileTasteStats } from '@/app/explore/actions';
+import { getProfileTasteStats, getPersonalTasteIdentity } from '@/app/explore/actions';
 
 interface ProfilePageProps {
   params: Promise<{
@@ -69,6 +69,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
   // 4. Fetch experiences and taste statistics if permitted
   let experiences: any[] = [];
   let tasteStats = null;
+  let personalTasteIdentity = null;
   if (canView) {
     const { data: exps } = await supabase
       .from('food_experiences')
@@ -79,6 +80,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
 
     experiences = exps || [];
     tasteStats = await getProfileTasteStats(profile.id);
+    personalTasteIdentity = await getPersonalTasteIdentity(profile.id);
   }
 
   return (
@@ -196,7 +198,7 @@ export default async function UserProfilePage({ params }: ProfilePageProps) {
                 <span>View 2026 Food Year Recap →</span>
               </Link>
             </div>
-            <TasteStatsCard stats={tasteStats} username={profile.username} isOwner={isOwner} />
+            <TasteStatsCard stats={tasteStats} identity={personalTasteIdentity} username={profile.username} isOwner={isOwner} />
           </div>
         )}
 

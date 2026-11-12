@@ -14,7 +14,29 @@ export interface PublicDishData {
     publicExperienceCount: number;
     publicRatingCount: number;
     publicRatingAvg: number | null;
+    tasteAvg: number | null;
+    tasteCount: number;
+    portionAvg: number | null;
+    portionCount: number;
+    valueAvg: number | null;
+    valueCount: number;
   };
+  ranking?: {
+    region: string;
+    rank: number | null;
+    bayesianScore: number | null;
+    isRanked: boolean;
+  };
+  placesLogged: Array<{
+    placeId: string;
+    placeName: string;
+    city: string | null;
+    address: string | null;
+    timesLogged: number;
+    dishRatingCount: number;
+    localDishRatingAvg: number | null;
+    placeRatingAvg: number | null;
+  }>;
   viewerPersonal: {
     experienceCount: number;
     ratingAvg: number | null;
@@ -25,9 +47,13 @@ export interface PublicDishData {
     title: string | null;
     author: { username: string; displayName: string | null };
     rating: number | null;
+    dishTaste?: number | null;
+    dishPortion?: number | null;
+    dishValue?: number | null;
     note: string | null;
     eatenAt: string;
     thumbnailUrl: string | null;
+    place?: { id: string; name: string; city: string | null } | null;
   }>;
   translations?: Array<{ locale: string; name: string }>;
 }
@@ -41,8 +67,35 @@ export interface PublicPlaceData {
   branches: Array<{ id: string; name: string; city: string | null }>;
   stats: {
     publicExperienceCount: number;
+    publicRatingCount: number;
     publicRatingAvg: number | null;
+    foodQualityAvg: number | null;
+    foodQualityCount: number;
+    valueForMoneyAvg: number | null;
+    valueForMoneyCount: number;
+    ambienceAvg: number | null;
+    ambienceCount: number;
+    serviceAvg: number | null;
+    serviceCount: number;
+    hygieneAvg: number | null;
+    hygieneCount: number;
   };
+  ranking?: {
+    city: string | null;
+    rank: number | null;
+    bayesianScore: number | null;
+    isRanked: boolean;
+  };
+  dishesLogged: Array<{
+    dishId: string;
+    dishName: string;
+    dishSlug: string;
+    cuisine: string | null;
+    timesLogged: number;
+    dishRatingCount: number;
+    localDishRatingAvg: number | null;
+    tasteAvg: number | null;
+  }>;
   viewerPersonal: {
     visitCount: number;
     latestRating: number | null;
@@ -59,329 +112,299 @@ export interface PublicPlaceData {
 }
 
 /**
- * Retrieves public dish data, community consensus, and viewer personal ratings.
+ * Retrieves public dish data, community consensus, and viewer personal ratings via get_dish_profile RPC.
  */
 export async function getDishBySlug(slug: string): Promise<PublicDishData | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // 1. Fetch dish
-  const { data: dish, error } = await supabase
-    .from('dishes')
-    .select('id, name, slug, cuisine, description, merged_into_id, is_listed, created_by')
-    .eq('slug', slug)
-    .single();
+  // Call PostgreSQL RPC get_dish_profile with strict public-pool isolation
+  const { data, error } = await supabase.rpc('get_dish_profile', {
+    p_slug: slug,
+    p_viewer_id: user?.id || null,
+  });
 
-  if (error || !dish) {
+  if (error || !data) {
     return null;
   }
 
-  // Non-negotiable #11: Unlisted dishes visible ONLY to creator
-  if (!dish.is_listed && (!user || user.id !== dish.created_by)) {
-    return null; // Return not found, never forbidden
-  }
-
-  // Follow redirect if merged
-  let canonicalDish = dish;
-  if (dish.merged_into_id) {
-    const { data: canonical } = await supabase
-      .from('dishes')
-      .select('id, name, slug, cuisine, description, merged_into_id, is_listed, created_by')
-      .eq('id', dish.merged_into_id)
-      .single();
-    if (canonical) canonicalDish = canonical;
-  }
-
-  // 2. Fetch community statistics from view
-  const { data: statsRow } = await supabase
-    .from('dish_public_stats')
-    .select('public_experience_count, public_rating_count, public_rating_avg')
-    .eq('dish_id', canonicalDish.id)
-    .single();
-
-  const stats = {
-    publicExperienceCount: statsRow?.public_experience_count || 0,
-    publicRatingCount: statsRow?.public_rating_count || 0,
-    publicRatingAvg: statsRow?.public_rating_avg ? Number(statsRow.public_rating_avg) : null,
-  };
-
-  // 3. Fetch viewer's own rating if authenticated
-  let viewerPersonal: PublicDishData['viewerPersonal'] = null;
-  if (user) {
-    const { data: userDishes } = await supabase
-      .from('experience_dishes')
-      .select(`
-        rating,
-        food_experiences!inner (user_id)
-      `)
-      .eq('dish_id', canonicalDish.id)
-      .eq('food_experiences.user_id', user.id);
-
-    if (userDishes && userDishes.length > 0) {
-      const rated = userDishes.filter((ud) => ud.rating !== null).map((ud) => ud.rating as number);
-      const avg = rated.length > 0 ? rated.reduce((a, b) => a + b, 0) / rated.length : null;
-      viewerPersonal = {
-        experienceCount: userDishes.length,
-        ratingAvg: avg !== null ? Math.round(avg * 10) / 10 : null,
-        latestRating: rated[rated.length - 1] || null,
-      };
-    }
-  }
-
-  // 4. Fetch publicly visible experiences for this dish
-  const { data: expDishes } = await supabase
-    .from('experience_dishes')
-    .select(`
-      rating,
-      note,
-      experience_id,
-      food_experiences!inner (
-        id,
-        title,
-        eaten_at,
-        status,
-        visibility,
-        user_id,
-        profiles:user_id (username, display_name)
-      )
-    `)
-    .eq('dish_id', canonicalDish.id)
-    .eq('food_experiences.status', 'published')
-    .eq('food_experiences.visibility', 'public')
-    .limit(10);
-
-  const expIds = (expDishes || []).map((ed) => ed.experience_id);
-
-  // Fetch photos for these experiences
-  let signedPhotoMap: Record<string, string> = {};
-  if (expIds.length > 0) {
-    const { data: photos } = await supabase
-      .from('experience_photos')
-      .select('experience_id, storage_path, position')
-      .in('experience_id', expIds)
-      .order('position', { ascending: true });
-
-    const pathsToSign: string[] = [];
-    for (const p of photos || []) {
-      if (!signedPhotoMap[p.experience_id]) {
-        signedPhotoMap[p.experience_id] = p.storage_path;
-        pathsToSign.push(p.storage_path);
-      }
-    }
-
-    if (pathsToSign.length > 0) {
-      signedPhotoMap = await getSignedPhotoUrls(pathsToSign);
-    }
-  }
-
-  const recentExperiences = (expDishes || []).map((ed) => {
-    const fe = ed.food_experiences as unknown as {
+  const profile = data as {
+    dish: {
+      id: string;
+      name: string;
+      slug: string;
+      cuisine: string | null;
+      description: string | null;
+      translations: Array<{ locale: string; name: string }>;
+    };
+    stats: {
+      public_experience_count: number;
+      public_rating_count: number;
+      public_rating_avg: number | null;
+      taste_avg: number | null;
+      taste_count: number;
+      portion_avg: number | null;
+      portion_count: number;
+      value_avg: number | null;
+      value_count: number;
+    };
+    ranking?: {
+      region: string;
+      rank: number | null;
+      bayesian_score: number | null;
+      is_ranked: boolean;
+    };
+    places_logged: Array<{
+      place_id: string;
+      place_name: string;
+      city: string | null;
+      address: string | null;
+      times_logged: number;
+      dish_rating_count: number;
+      local_dish_rating_avg: number | null;
+      place_rating_avg: number | null;
+    }>;
+    viewer_personal: {
+      experience_count: number;
+      rating_avg: number | null;
+      latest_rating: number | null;
+    } | null;
+    recent_experiences: Array<{
       id: string;
       title: string | null;
       eaten_at: string;
-      profiles: { username: string; display_name: string | null };
-    };
+      dish_rating: number | null;
+      dish_taste: number | null;
+      dish_portion: number | null;
+      dish_value: number | null;
+      dish_note: string | null;
+      place?: { id: string; name: string; city: string | null } | null;
+      author: { id: string; username: string; display_name: string | null; avatar_path: string | null };
+      primary_photo_path: string | null;
+    }>;
+  };
 
-    return {
-      id: fe.id,
-      title: fe.title,
-      author: {
-        username: fe.profiles?.username || 'unknown',
-        displayName: fe.profiles?.display_name || null,
-      },
-      rating: ed.rating,
-      note: ed.note,
-      eatenAt: fe.eaten_at,
-      thumbnailUrl: signedPhotoMap[fe.id] || null,
-    };
-  });
+  // Sign experience photos if any
+  const photoPaths = (profile.recent_experiences || [])
+    .map((e) => e.primary_photo_path)
+    .filter((p): p is string => Boolean(p));
 
-  // 5. Fetch translations (Phase 22)
-  const { data: transRows } = await supabase
-    .from('dish_translations')
-    .select('locale, name')
-    .eq('dish_id', canonicalDish.id);
-
-  const translations = (transRows || []).map((t) => ({
-    locale: t.locale,
-    name: t.name,
-  }));
+  let signedPhotoMap: Record<string, string> = {};
+  if (photoPaths.length > 0) {
+    signedPhotoMap = await getSignedPhotoUrls(photoPaths);
+  }
 
   return {
-    id: canonicalDish.id,
-    name: canonicalDish.name,
-    slug: canonicalDish.slug,
-    cuisine: canonicalDish.cuisine,
-    description: canonicalDish.description,
-    stats,
-    viewerPersonal,
-    recentExperiences,
-    translations,
+    id: profile.dish.id,
+    name: profile.dish.name,
+    slug: profile.dish.slug,
+    cuisine: profile.dish.cuisine,
+    description: profile.dish.description,
+    translations: profile.dish.translations,
+    stats: {
+      publicExperienceCount: profile.stats.public_experience_count || 0,
+      publicRatingCount: profile.stats.public_rating_count || 0,
+      publicRatingAvg: profile.stats.public_rating_avg !== null ? Number(profile.stats.public_rating_avg) : null,
+      tasteAvg: profile.stats.taste_avg !== null ? Number(profile.stats.taste_avg) : null,
+      tasteCount: profile.stats.taste_count || 0,
+      portionAvg: profile.stats.portion_avg !== null ? Number(profile.stats.portion_avg) : null,
+      portionCount: profile.stats.portion_count || 0,
+      valueAvg: profile.stats.value_avg !== null ? Number(profile.stats.value_avg) : null,
+      valueCount: profile.stats.value_count || 0,
+    },
+    ranking: profile.ranking
+      ? {
+          region: profile.ranking.region,
+          rank: profile.ranking.rank,
+          bayesianScore: profile.ranking.bayesian_score,
+          isRanked: profile.ranking.is_ranked,
+        }
+      : undefined,
+    placesLogged: (profile.places_logged || []).map((pl) => ({
+      placeId: pl.place_id,
+      placeName: pl.place_name,
+      city: pl.city,
+      address: pl.address,
+      timesLogged: pl.times_logged,
+      dishRatingCount: pl.dish_rating_count,
+      localDishRatingAvg: pl.local_dish_rating_avg !== null ? Number(pl.local_dish_rating_avg) : null,
+      placeRatingAvg: pl.place_rating_avg !== null ? Number(pl.place_rating_avg) : null,
+    })),
+    viewerPersonal: profile.viewer_personal
+      ? {
+          experienceCount: profile.viewer_personal.experience_count,
+          ratingAvg: profile.viewer_personal.rating_avg !== null ? Number(profile.viewer_personal.rating_avg) : null,
+          latestRating: profile.viewer_personal.latest_rating,
+        }
+      : null,
+    recentExperiences: (profile.recent_experiences || []).map((re) => ({
+      id: re.id,
+      title: re.title,
+      author: {
+        username: re.author.username,
+        displayName: re.author.display_name,
+      },
+      rating: re.dish_rating,
+      dishTaste: re.dish_taste,
+      dishPortion: re.dish_portion,
+      dishValue: re.dish_value,
+      note: re.dish_note,
+      eatenAt: re.eaten_at,
+      thumbnailUrl: re.primary_photo_path ? signedPhotoMap[re.primary_photo_path] || null : null,
+      place: re.place || null,
+    })),
   };
 }
 
 /**
- * Retrieves public place data, branches, community ratings, and public experiences.
+ * Retrieves public place data, branches, 5-dimension scorecard, "What to Order", and public experiences via get_place_profile RPC.
  */
 export async function getPlaceById(id: string): Promise<PublicPlaceData | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: place, error } = await supabase
-    .from('places')
-    .select('id, name, city, address, parent_place_id, merged_into_id, is_listed, created_by')
-    .eq('id', id)
-    .single();
+  // Call PostgreSQL RPC get_place_profile with strict public-pool isolation
+  const { data, error } = await supabase.rpc('get_place_profile', {
+    p_place_id: id,
+    p_viewer_id: user?.id || null,
+  });
 
-  if (error || !place) {
+  if (error || !data) {
     return null;
   }
 
-  // Non-negotiable #11: Unlisted places visible ONLY to creator
-  if (!place.is_listed && (!user || user.id !== place.created_by)) {
-    return null; // Return not found, never forbidden
-  }
-
-  let canonicalPlace = place;
-  if (place.merged_into_id) {
-    const { data: canonical } = await supabase
-      .from('places')
-      .select('id, name, city, address, parent_place_id, merged_into_id, is_listed, created_by')
-      .eq('id', place.merged_into_id)
-      .single();
-    if (canonical) canonicalPlace = canonical;
-  }
-
-  // Fetch parent place if branch
-  let parentPlace: PublicPlaceData['parentPlace'] = null;
-  if (canonicalPlace.parent_place_id) {
-    const { data: parent } = await supabase
-      .from('places')
-      .select('id, name')
-      .eq('id', canonicalPlace.parent_place_id)
-      .single();
-    if (parent) parentPlace = parent;
-  }
-
-  // Fetch branches
-  const { data: branchesData } = await supabase
-    .from('places')
-    .select('id, name, city')
-    .eq('parent_place_id', canonicalPlace.id);
-
-  const branches = (branchesData || []).map((b) => ({
-    id: b.id,
-    name: b.name,
-    city: b.city,
-  }));
-
-  // Fetch community stats from view
-  const { data: statsRow } = await supabase
-    .from('place_public_stats')
-    .select('public_experience_count, public_rating_avg')
-    .eq('place_id', canonicalPlace.id)
-    .single();
-
-  const stats = {
-    publicExperienceCount: statsRow?.public_experience_count || 0,
-    publicRatingAvg: statsRow?.public_rating_avg ? Number(statsRow.public_rating_avg) : null,
+  const profile = data as {
+    place: {
+      id: string;
+      name: string;
+      city: string | null;
+      address: string | null;
+      parent_place: { id: string; name: string } | null;
+      branches: Array<{ id: string; name: string; city: string | null }>;
+    };
+    stats: {
+      public_experience_count: number;
+      public_rating_count: number;
+      public_rating_avg: number | null;
+      food_quality_avg: number | null;
+      food_quality_count: number;
+      value_for_money_avg: number | null;
+      value_for_money_count: number;
+      ambience_avg: number | null;
+      ambience_count: number;
+      service_avg: number | null;
+      service_count: number;
+      hygiene_avg: number | null;
+      hygiene_count: number;
+    };
+    ranking?: {
+      city: string | null;
+      rank: number | null;
+      bayesian_score: number | null;
+      is_ranked: boolean;
+    };
+    dishes_logged: Array<{
+      dish_id: string;
+      dish_name: string;
+      dish_slug: string;
+      cuisine: string | null;
+      times_logged: number;
+      dish_rating_count: number;
+      local_dish_rating_avg: number | null;
+      taste_avg: number | null;
+    }>;
+    viewer_personal: {
+      visit_count: number;
+      latest_rating: number | null;
+    } | null;
+    recent_experiences: Array<{
+      id: string;
+      title: string | null;
+      eaten_at: string;
+      overall_rating: number | null;
+      place_rating_overall: number | null;
+      place_rating_food: number | null;
+      place_rating_value: number | null;
+      place_rating_ambience: number | null;
+      place_rating_service: number | null;
+      place_rating_hygiene: number | null;
+      dining_context: string | null;
+      would_return: boolean | null;
+      description: string | null;
+      author: { id: string; username: string; display_name: string | null; avatar_path: string | null };
+      dishes_summary: string | null;
+      primary_photo_path: string | null;
+    }>;
   };
 
-  // Viewer personal visits
-  let viewerPersonal: PublicPlaceData['viewerPersonal'] = null;
-  if (user) {
-    const { data: visits } = await supabase
-      .from('food_experiences')
-      .select('overall_rating')
-      .eq('place_id', canonicalPlace.id)
-      .eq('user_id', user.id);
-
-    if (visits && visits.length > 0) {
-      const rated = visits.filter((v) => v.overall_rating !== null).map((v) => v.overall_rating as number);
-      viewerPersonal = {
-        visitCount: visits.length,
-        latestRating: rated[rated.length - 1] || null,
-      };
-    }
-  }
-
-  // Public experiences at this place
-  const { data: experiences } = await supabase
-    .from('food_experiences')
-    .select(`
-      id,
-      title,
-      overall_rating,
-      eaten_at,
-      profiles:user_id (username, display_name)
-    `)
-    .eq('place_id', canonicalPlace.id)
-    .eq('status', 'published')
-    .eq('visibility', 'public')
-    .order('eaten_at', { ascending: false })
-    .limit(10);
-
-  const expIds = (experiences || []).map((e) => e.id);
+  // Sign experience photos if any
+  const photoPaths = (profile.recent_experiences || [])
+    .map((e) => e.primary_photo_path)
+    .filter((p): p is string => Boolean(p));
 
   let signedPhotoMap: Record<string, string> = {};
-  const dishesSummaryMap: Record<string, string> = {};
-
-  if (expIds.length > 0) {
-    const { data: photos } = await supabase
-      .from('experience_photos')
-      .select('experience_id, storage_path, position')
-      .in('experience_id', expIds)
-      .order('position', { ascending: true });
-
-    const pathsToSign: string[] = [];
-    for (const p of photos || []) {
-      if (!signedPhotoMap[p.experience_id]) {
-        signedPhotoMap[p.experience_id] = p.storage_path;
-        pathsToSign.push(p.storage_path);
-      }
-    }
-    if (pathsToSign.length > 0) {
-      signedPhotoMap = await getSignedPhotoUrls(pathsToSign);
-    }
-
-    const { data: dishes } = await supabase
-      .from('experience_dishes')
-      .select('experience_id, display_name')
-      .in('experience_id', expIds);
-
-    for (const d of dishes || []) {
-      dishesSummaryMap[d.experience_id] = dishesSummaryMap[d.experience_id]
-        ? `${dishesSummaryMap[d.experience_id]}, ${d.display_name}`
-        : d.display_name;
-    }
+  if (photoPaths.length > 0) {
+    signedPhotoMap = await getSignedPhotoUrls(photoPaths);
   }
 
-  const recentExperiences = (experiences || []).map((e) => {
-    const prof = e.profiles as unknown as { username: string; display_name: string | null };
-    return {
-      id: e.id,
-      title: e.title,
-      author: {
-        username: prof?.username || 'unknown',
-        displayName: prof?.display_name || null,
-      },
-      overallRating: e.overall_rating,
-      eatenAt: e.eaten_at,
-      thumbnailUrl: signedPhotoMap[e.id] || null,
-      dishesSummary: dishesSummaryMap[e.id] || '',
-    };
-  });
-
   return {
-    id: canonicalPlace.id,
-    name: canonicalPlace.name,
-    city: canonicalPlace.city,
-    address: canonicalPlace.address,
-    parentPlace,
-    branches,
-    stats,
-    viewerPersonal,
-    recentExperiences,
+    id: profile.place.id,
+    name: profile.place.name,
+    city: profile.place.city,
+    address: profile.place.address,
+    parentPlace: profile.place.parent_place,
+    branches: profile.place.branches || [],
+    stats: {
+      publicExperienceCount: profile.stats.public_experience_count || 0,
+      publicRatingCount: profile.stats.public_rating_count || 0,
+      publicRatingAvg: profile.stats.public_rating_avg !== null ? Number(profile.stats.public_rating_avg) : null,
+      foodQualityAvg: profile.stats.food_quality_avg !== null ? Number(profile.stats.food_quality_avg) : null,
+      foodQualityCount: profile.stats.food_quality_count || 0,
+      valueForMoneyAvg: profile.stats.value_for_money_avg !== null ? Number(profile.stats.value_for_money_avg) : null,
+      valueForMoneyCount: profile.stats.value_for_money_count || 0,
+      ambienceAvg: profile.stats.ambience_avg !== null ? Number(profile.stats.ambience_avg) : null,
+      ambienceCount: profile.stats.ambience_count || 0,
+      serviceAvg: profile.stats.service_avg !== null ? Number(profile.stats.service_avg) : null,
+      serviceCount: profile.stats.service_count || 0,
+      hygieneAvg: profile.stats.hygiene_avg !== null ? Number(profile.stats.hygiene_avg) : null,
+      hygieneCount: profile.stats.hygiene_count || 0,
+    },
+    ranking: profile.ranking
+      ? {
+          city: profile.ranking.city,
+          rank: profile.ranking.rank,
+          bayesianScore: profile.ranking.bayesian_score,
+          isRanked: profile.ranking.is_ranked,
+        }
+      : undefined,
+    dishesLogged: (profile.dishes_logged || []).map((d) => ({
+      dishId: d.dish_id,
+      dishName: d.dish_name,
+      dishSlug: d.dish_slug,
+      cuisine: d.cuisine,
+      timesLogged: d.times_logged,
+      dishRatingCount: d.dish_rating_count,
+      localDishRatingAvg: d.local_dish_rating_avg !== null ? Number(d.local_dish_rating_avg) : null,
+      tasteAvg: d.taste_avg !== null ? Number(d.taste_avg) : null,
+    })),
+    viewerPersonal: profile.viewer_personal
+      ? {
+          visitCount: profile.viewer_personal.visit_count,
+          latestRating: profile.viewer_personal.latest_rating,
+        }
+      : null,
+    recentExperiences: (profile.recent_experiences || []).map((re) => ({
+      id: re.id,
+      title: re.title,
+      author: {
+        username: re.author.username,
+        displayName: re.author.display_name,
+      },
+      overallRating: re.place_rating_overall || re.overall_rating,
+      eatenAt: re.eaten_at,
+      thumbnailUrl: re.primary_photo_path ? signedPhotoMap[re.primary_photo_path] || null : null,
+      dishesSummary: re.dishes_summary || '',
+    })),
   };
 }
 
